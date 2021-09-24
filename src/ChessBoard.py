@@ -6,6 +6,27 @@ from chessman.Shi import *
 from chessman.Shuai import *
 from chessman.Xiang import *
 
+empty_board = '''
+車－馬－象－士－將－士－象－馬－車
+｜　｜　｜　｜＼｜／｜　｜　｜　｜
+＋－＋－＋－＋－Ｘ－＋－＋－＋－＋
+｜　｜　｜　｜／｜＼｜　｜　｜　｜
+＋－砲－＋－＋－＋－＋－＋－砲－＋
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+卒－＋－卒－＋－卒－＋－卒－＋－卒
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+＋－＋－＋－＋－＋－＋－＋－＋－＋
+＋－＋－＋－＋－＋－＋－＋－＋－＋
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+兵－＋－兵－＋－兵－＋－兵－＋－兵
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+＋－炮－＋－＋－＋－＋－＋－炮－＋
+｜　｜　｜　｜＼｜／｜　｜　｜　｜
+＋－＋－＋－＋－Ｘ－＋－＋－＋－＋
+｜　｜　｜　｜／｜＼｜　｜　｜　｜
+俥－傌－相－仕－帥－仕－相－傌－俥
+'''
+
 
 class ChessBoard:
     pieces = dict()
@@ -111,3 +132,18 @@ class ChessBoard:
         self.pieces[x, y].selected = True
         self.selected_piece = self.pieces[x, y]
         return False, None
+
+
+class Board:
+    def __init__(self):
+        self.situation = {}
+
+    def __str__(self):
+        pass
+
+    def _formation(self):
+        pass
+
+
+if __name__ == '__main__':
+    print(empty_board)
