@@ -1,3 +1,0 @@
-cfg = {
-    'gui': True
-}

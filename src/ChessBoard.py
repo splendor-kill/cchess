@@ -1,3 +1,4 @@
+from collections import defaultdict
 from enum import IntEnum
 
 from chessman.Bing import *
@@ -11,6 +12,10 @@ from chessman.Xiang import *
 APPEAR_BLACK = '\033[1;30;47m'
 APPEAR_RED = '\033[1;31;47m'
 ENDC = '\033[0m'
+
+PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
+PLACE_CHARS = '＋Ｘ'
+POS_PREFIX = '前后中二三四五'
 
 
 class Camp(IntEnum):
@@ -26,10 +31,6 @@ class Force(IntEnum):
     JU = 5
     PAO = 6
     BING = 7
-
-
-PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
-PLACE_CHARS = '＋Ｘ'
 
 
 def piece_2_char(camp, force):
@@ -87,6 +88,7 @@ EMPTY_BOARD = '''
 {p80}－{p81}－{p82}－{p83}－{p84}－{p85}－{p86}－{p87}－{p88}
 ｜　｜　｜　｜／｜＼｜　｜　｜　｜
 {p90}－{p91}－{p92}－{p93}－{p94}－{p95}－{p96}－{p97}－{p98}
+九　八　七　六　五　四　三　二　一
 '''
 
 
@@ -197,17 +199,34 @@ class ChessBoard:
 
 
 class Board:
+    """
+         -------- x(j)
+         |
+         |
+    y(i) |
+    """
+
     def __init__(self, situation):
         if isinstance(situation, str):
             situation = self._parse(situation)
         self.situation = situation
+        self.pieces_in_col = self.indexing_by_col()
 
     def __str__(self):
         sit = {f'p{i}{j}': PLACE_CHARS[0] for i in range(10) for j in range(9)}
         for p in self.situation:
-            k = f'p{p.x}{p.y}'
+            k = f'p{p.row}{p.col}'
             sit[k] = str(p)
         return EMPTY_BOARD.format(**sit)
+
+    def get_col(self, col):
+        pass
+
+    def indexing_by_col(self):
+        d = defaultdict(list)
+        for p in self.situation:
+            d[p.col].append(p)
+        return d
 
     @staticmethod
     def _parse(board):
@@ -228,9 +247,9 @@ class Board:
 
 
 class Piece:
-    def __init__(self, x, y, camp, force):
-        self.x = x
-        self.y = y
+    def __init__(self, row, col, camp, force):
+        self.row = row
+        self.col = col
         self.camp = camp
         self.force = force
 
@@ -239,6 +258,44 @@ class Piece:
         appear = APPEAR_RED if self.camp == Camp.RED else APPEAR_BLACK
         c = appear + c + ENDC
         return c
+
+
+def normalize_action(cmd):
+    pass
+
+
+def parse_action(cmd, camp, board):
+    """中式记法，参考 https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B
+
+    :param cmd: str, assume has normalized
+    :param camp: which side
+    :param board:
+    :return: locations (src, dst)
+    """
+
+    cmd = cmd.strip()
+    if len(cmd) == 3:
+        cmd = cmd + '1'
+    assert len(cmd) in (4, 5)
+    n = set(cmd).intersection(set(PIECE_CHARS))
+    assert len(n) == 1
+    for p in n:
+        break
+    i = cmd.index(p)
+    assert i in (0, 1)
+    prefix = cmd[i - 1] if i > 0 else None
+    src_col = cmd[i + 1]
+    action = cmd[i + 2]
+    act_param = cmd[i + 3]
+
+    return
+
+
+def test_parse_action():
+    cmds = ['炮二平五', '马8进7', '炮8平9', '前㐷退六', '后炮平4', '卒3进1', '车9进1',
+            '兵七进', '中兵进', '三兵平四', '前兵九平八']
+    for cmd in cmds:
+        action = parse_action(cmd, Camp.RED, None)
 
 
 def test():
