@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from enum import IntEnum
 
@@ -9,9 +10,13 @@ from chessman.Shi import *
 from chessman.Shuai import *
 from chessman.Xiang import *
 
-APPEAR_BLACK = '\033[1;30;47m'
-APPEAR_RED = '\033[1;31;47m'
-ENDC = '\033[0m'
+APPEAR_BLACK = ''
+APPEAR_RED = ''
+ENDC = ''
+if os.name == 'posix':
+    APPEAR_BLACK = '\033[1;30;47m'
+    APPEAR_RED = '\033[1;31;47m'
+    ENDC = '\033[0m'
 
 PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
 PLACE_CHARS = '＋Ｘ'
