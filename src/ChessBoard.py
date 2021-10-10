@@ -20,7 +20,8 @@ if os.name == 'posix':
 
 PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
 PLACE_CHARS = '＋Ｘ'
-POS_PREFIX = '前后中二三四五'
+N_ROWS = 10  # term: rank
+N_COLS = 9  # term: file
 
 
 class Camp(IntEnum):
@@ -36,6 +37,67 @@ class Force(IntEnum):
     JU = 5
     PAO = 6
     BING = 7
+
+
+FORCE_ALIAS = {
+    Force.SHUAI: tuple('将帅將帥'),
+    Force.SHI: tuple('士仕'),
+    Force.XIANG: tuple('象相'),
+    Force.MA: tuple('马㐷馬傌'),
+    Force.JU: tuple('车伡車俥'),
+    Force.PAO: tuple('炮砲'),
+    Force.BING: tuple('兵卒'),
+}
+FORCE_ALIAS_INV = {e: k for k, v in FORCE_ALIAS.items() for e in v}
+
+COL_ALIAS = {
+    1: tuple('1１一'),
+    2: tuple('1２二'),
+    3: tuple('1３三'),
+    4: tuple('1４四'),
+    5: tuple('1５五'),
+    6: tuple('1６六'),
+    7: tuple('1７七'),
+    8: tuple('1８八'),
+    9: tuple('1９九')
+}
+COL_ALIAS_INV = {e: k for k, v in COL_ALIAS.items() for e in v}
+
+
+class Action(IntEnum):
+    ADVANCE = 1
+    RETREAT = 2
+    TRAVERSE = 3
+
+
+ACTION_ALIAS = {
+    Action.ADVANCE: '进',
+    Action.RETREAT: '退',
+    Action.TRAVERSE: '平'
+}
+ACTION_ALIAS_INV = {v: k for k, v in ACTION_ALIAS.items()}
+
+
+class PosPrefix(IntEnum):
+    FRONT = 1
+    MID = 2
+    REAR = 3
+    SECOND = 4
+    THIRD = 5
+    FORTH = 6
+    FIFTH = 7
+
+
+POS_PREFIX_ALIAS = {
+    PosPrefix.FRONT: '前',
+    PosPrefix.REAR: '后',
+    PosPrefix.MID: '中',
+    PosPrefix.SECOND: '二',
+    PosPrefix.THIRD: '三',
+    PosPrefix.FORTH: '四',
+    PosPrefix.FIFTH: '五',
+}
+POS_PREFIX_ALIAS_INV = {v: k for k, v in POS_PREFIX_ALIAS.items()}
 
 
 def piece_2_char(camp, force):
@@ -75,6 +137,7 @@ FULL_BOARD = '''
 '''
 
 EMPTY_BOARD = '''
+１　２　３　４　５　６　７　８　９
 {p00}－{p01}－{p02}－{p03}－{p04}－{p05}－{p06}－{p07}－{p08}
 ｜　｜　｜　｜＼｜／｜　｜　｜　｜
 {p10}－{p11}－{p12}－{p13}－{p14}－{p15}－{p16}－{p17}－{p18}
@@ -215,10 +278,11 @@ class Board:
         if isinstance(situation, str):
             situation = self._parse(situation)
         self.situation = situation
+        assert isinstance(self.situation, list)
         self.pieces_in_col = self.indexing_by_col()
 
     def __str__(self):
-        sit = {f'p{i}{j}': PLACE_CHARS[0] for i in range(10) for j in range(9)}
+        sit = {f'p{i}{j}': PLACE_CHARS[0] for i in range(N_ROWS) for j in range(N_ROWS)}
         for p in self.situation:
             k = f'p{p.row}{p.col}'
             sit[k] = str(p)
@@ -238,7 +302,7 @@ class Board:
         board = board.strip()
         rows = board.splitlines()
         rows = rows[:9:2] + rows[-9::2]
-        assert len(rows) == 10
+        assert len(rows) == N_ROWS
         sit = []
         for i, r in enumerate(rows):
             r = r.strip()
@@ -250,9 +314,23 @@ class Board:
                     sit.append(Piece(i, j, camp, force))
         return sit
 
+    def filter(self, camp, force):
+        d = defaultdict(list)
+        for p in self.situation:
+            if p.camp == camp and p.force == force:
+                d[p.col].append(p)
+        return d
+
 
 class Piece:
     def __init__(self, row, col, camp, force):
+        """xiangqi 术语参考 http://wxf.ca/xq/computer/XIANGQI_TERMS_IN_ENGLISH.pdf
+
+        :param row: rank
+        :param col: file
+        :param camp: red or black
+        :param force: piece type
+        """
         self.row = row
         self.col = col
         self.camp = camp
@@ -269,8 +347,10 @@ def normalize_action(cmd):
     pass
 
 
-def parse_action(cmd, camp, board):
+def parse_action(cmd: str, camp: Camp, board: Board):
     """中式记法，参考 https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B
+    参考2 http://wxf.ca/xq/computer/wxf_notation.html ;
+    参考3 http://wxf.ca/xq/computer/XIANGQI_TERMS_IN_ENGLISH.pdf
 
     :param cmd: str, assume has normalized
     :param camp: which side
@@ -280,27 +360,50 @@ def parse_action(cmd, camp, board):
 
     cmd = cmd.strip()
     if len(cmd) == 3:
-        cmd = cmd + '1'
+        if cmd[-1] == ACTION_ALIAS[Action.ADVANCE]:  # 处理如“兵七进”
+            cmd = cmd + '1'
     assert len(cmd) in (4, 5)
-    n = set(cmd).intersection(set(PIECE_CHARS))
+    n = set(cmd).intersection(FORCE_ALIAS_INV)
     assert len(n) == 1
-    for p in n:
-        break
+    (p), = n  # get the unique element
+    force = FORCE_ALIAS_INV[p]
     i = cmd.index(p)
     assert i in (0, 1)
     prefix = cmd[i - 1] if i > 0 else None
+    if prefix is not None:
+        assert prefix in POS_PREFIX_ALIAS_INV
     src_col = cmd[i + 1]
-    action = cmd[i + 2]
-    act_param = cmd[i + 3]
+    if src_col in COL_ALIAS_INV:
+        src_col = COL_ALIAS_INV[src_col]
+    else:  # need ref board
+        assert prefix is not None
+        prefix = POS_PREFIX_ALIAS_INV[prefix]
+        col2pieces = board.filter(camp, force)
+        if len(col2pieces) == 1:
+            (col, piece), = col2pieces.items()
+            assert prefix in (PosPrefix.FRONT, PosPrefix.REAR)
+            src_col = col
+        else:
+            assert force == Force.BING
 
-    return
+
+    n = set(cmd).intersection(ACTION_ALIAS_INV)
+    assert len(n) == 1
+    (a), = n  # get the unique element
+    action = ACTION_ALIAS_INV[a]
+    i = cmd.index(a)
+    act_param = cmd[i + 1]
+    assert act_param in COL_ALIAS_INV
+    act_param = COL_ALIAS_INV[act_param]
+
+    return force, action, act_param
 
 
 def test_parse_action():
     cmds = ['炮二平五', '马8进7', '炮8平9', '前㐷退六', '后炮平4', '卒3进1', '车9进1',
-            '兵七进', '中兵进', '三兵平四', '前兵九平八']
+            '兵七进', '中兵进', '三兵平四', '三兵三平四', '前兵九平八']
     for cmd in cmds:
-        action = parse_action(cmd, Camp.RED, None)
+        force, action, act_param = parse_action(cmd, Camp.RED, None)
 
 
 def test():
