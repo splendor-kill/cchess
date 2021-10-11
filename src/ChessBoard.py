@@ -52,14 +52,14 @@ FORCE_ALIAS_INV = {e: k for k, v in FORCE_ALIAS.items() for e in v}
 
 COL_ALIAS = {
     1: tuple('1１一'),
-    2: tuple('1２二'),
-    3: tuple('1３三'),
-    4: tuple('1４四'),
-    5: tuple('1５五'),
-    6: tuple('1６六'),
-    7: tuple('1７七'),
-    8: tuple('1８八'),
-    9: tuple('1９九')
+    2: tuple('2２二'),
+    3: tuple('3３三'),
+    4: tuple('4４四'),
+    5: tuple('5５五'),
+    6: tuple('6６六'),
+    7: tuple('7７七'),
+    8: tuple('8８八'),
+    9: tuple('9９九')
 }
 COL_ALIAS_INV = {e: k for k, v in COL_ALIAS.items() for e in v}
 
@@ -78,7 +78,7 @@ ACTION_ALIAS = {
 ACTION_ALIAS_INV = {v: k for k, v in ACTION_ALIAS.items()}
 
 
-class PosPrefix(IntEnum):
+class RowIndicator(IntEnum):
     FRONT = 1
     MID = 2
     REAR = 3
@@ -88,16 +88,16 @@ class PosPrefix(IntEnum):
     FIFTH = 7
 
 
-POS_PREFIX_ALIAS = {
-    PosPrefix.FRONT: '前',
-    PosPrefix.REAR: '后',
-    PosPrefix.MID: '中',
-    PosPrefix.SECOND: '二',
-    PosPrefix.THIRD: '三',
-    PosPrefix.FORTH: '四',
-    PosPrefix.FIFTH: '五',
+ROW_INDICATOR_ALIAS = {
+    RowIndicator.FRONT: '前',
+    RowIndicator.REAR: '后',
+    RowIndicator.MID: '中',
+    RowIndicator.SECOND: '二',
+    RowIndicator.THIRD: '三',
+    RowIndicator.FORTH: '四',
+    RowIndicator.FIFTH: '五',
 }
-POS_PREFIX_ALIAS_INV = {v: k for k, v in POS_PREFIX_ALIAS.items()}
+ROW_INDICATOR_ALIAS_INV = {v: k for k, v in ROW_INDICATOR_ALIAS.items()}
 
 
 def piece_2_char(camp, force):
@@ -114,27 +114,6 @@ def recog_piece(piece: str):
     force = Force(r + 1)
     return camp, force
 
-
-FULL_BOARD = '''
-車－馬－象－士－將－士－象－馬－車
-｜　｜　｜　｜＼｜／｜　｜　｜　｜
-＋－＋－＋－＋－＋－＋－＋－＋－＋
-｜　｜　｜　｜／｜＼｜　｜　｜　｜
-＋－砲－＋－＋－＋－＋－＋－砲－＋
-｜　｜　｜　｜　｜　｜　｜　｜　｜
-卒－＋－卒－＋－卒－＋－卒－＋－卒
-｜　｜　｜　｜　｜　｜　｜　｜　｜
-＋－＋－＋－＋－＋－＋－＋－＋－＋
-＋－＋－＋－＋－＋－＋－＋－＋－＋
-｜　｜　｜　｜　｜　｜　｜　｜　｜
-兵－＋－兵－＋－兵－＋－兵－＋－兵
-｜　｜　｜　｜　｜　｜　｜　｜　｜
-＋－炮－＋－＋－＋－＋－＋－炮－＋
-｜　｜　｜　｜＼｜／｜　｜　｜　｜
-＋－＋－＋－＋－＋－＋－＋－＋－＋
-｜　｜　｜　｜／｜＼｜　｜　｜　｜
-俥－傌－相－仕－帥－仕－相－傌－俥
-'''
 
 EMPTY_BOARD = '''
 １　２　３　４　５　６　７　８　９
@@ -321,6 +300,57 @@ class Board:
                 d[p.col].append(p)
         return d
 
+    def get_piece(self, camp, force, col, row_indicator: RowIndicator = None):
+        """
+
+        :param camp:
+        :param force:
+        :param col: relative to camp self perspective, in [1..9]
+        :param row_indicator:
+        :return: piece
+        """
+
+        col -= 1
+        if camp == Camp.RED:  # from right to left
+            col = N_COLS - 1 - col
+        pieces = []
+        for p in self.situation:
+            if p.camp == camp and p.force == force and p.col == col:
+                pieces.append(p)
+        n_pieces = len(pieces)
+        if n_pieces == 1:
+            return pieces[0]
+
+        rev = camp == Camp.RED
+        pieces.sort(key=lambda p: p.row, reverse=rev)
+        if row_indicator == RowIndicator.FRONT:
+            assert n_pieces > 1
+            return pieces[0]
+        elif row_indicator == RowIndicator.MID:
+            assert n_pieces == 3
+            return pieces[1]
+        elif row_indicator == RowIndicator.REAR:
+            assert n_pieces > 1
+            return pieces[-1]
+        elif row_indicator == RowIndicator.SECOND:
+            assert n_pieces >= 2
+            return pieces[1]
+        elif row_indicator == RowIndicator.THIRD:
+            assert n_pieces >= 3
+            return pieces[2]
+        elif row_indicator == RowIndicator.FORTH:
+            assert n_pieces >= 4
+            return pieces[3]
+        elif row_indicator == RowIndicator.FIFTH:
+            assert n_pieces == 5
+            return pieces[4]
+
+    def make_move(self, piece, dst):
+        to_remove = None
+        for p in self.situation:
+            if p.col == dst[0] and p.row == dst[1] and p.camp != piece.camp:
+                to_remove = p
+
 
 class Piece:
     def __init__(self, row, col, camp, force):
@@ -371,21 +401,29 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     assert i in (0, 1)
     prefix = cmd[i - 1] if i > 0 else None
     if prefix is not None:
-        assert prefix in POS_PREFIX_ALIAS_INV
+        assert prefix in ROW_INDICATOR_ALIAS_INV
+        prefix = ROW_INDICATOR_ALIAS_INV[prefix]
     src_col = cmd[i + 1]
     if src_col in COL_ALIAS_INV:
         src_col = COL_ALIAS_INV[src_col]
     else:  # need ref board
         assert prefix is not None
-        prefix = POS_PREFIX_ALIAS_INV[prefix]
         col2pieces = board.filter(camp, force)
         if len(col2pieces) == 1:
             (col, piece), = col2pieces.items()
-            assert prefix in (PosPrefix.FRONT, PosPrefix.REAR)
+            assert piece != Force.BING and prefix in (RowIndicator.FRONT, RowIndicator.REAR) or piece == Force.BING
             src_col = col
         else:
             assert force == Force.BING
+            if prefix is None:
+                raise ValueError('undistinguishable')
+            prefix = ROW_INDICATOR_ALIAS_INV[prefix]
+            if prefix in (RowIndicator.MID, RowIndicator.THIRD, RowIndicator.FORTH):
+                src_col = max(col2pieces, key=lambda k: len(col2pieces[k]))
+            else:
+                raise ValueError('undistinguishable')
 
+    piece = board.get_piece(camp, force, src_col, prefix)
 
     n = set(cmd).intersection(ACTION_ALIAS_INV)
     assert len(n) == 1
@@ -396,14 +434,37 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     assert act_param in COL_ALIAS_INV
     act_param = COL_ALIAS_INV[act_param]
 
-    return force, action, act_param
+    dst = calc_dst(piece, action, act_param)
+
+    return force, action, act_param, piece, dst
+
+
+def calc_dst(piece, action, act_param):
+    dir_ = -1 if piece.camp == Camp.RED else 1
+    if action == Action.TRAVERSE:
+        dst_col = act_param - 1
+        dst_row = piece.row
+    elif action == Action.ADVANCE:
+        dst_col = piece.col
+        dst_row = piece.row + dir_ * act_param
+    else:  # Action.RETREAT
+        dst_col = piece.col
+        dst_row = piece.row - dir_ * act_param
+    return dst_col, dst_row
 
 
 def test_parse_action():
-    cmds = ['炮二平五', '马8进7', '炮8平9', '前㐷退六', '后炮平4', '卒3进1', '车9进1',
-            '兵七进', '中兵进', '三兵平四', '三兵三平四', '前兵九平八']
+    cmds = ['炮二平五']  # , '马8进7', '炮8平9', ]
+    # '前㐷退六', '后炮平4', '卒3进1', '车9进1',
+    # '兵七进', '中兵进', '三兵平四', '三兵三平四', '前兵九平八']
+
+    from constants import FULL_BOARD
+    board = Board(FULL_BOARD)
     for cmd in cmds:
-        force, action, act_param = parse_action(cmd, Camp.RED, None)
+        force, action, act_param, piece, dst = parse_action(cmd, Camp.RED, board)
+        print(force, action, act_param, piece, dst)
+        board.make_move(piece, dst)
+        print(board)
 
 
 def test():
@@ -420,29 +481,11 @@ def test():
     board = Board(situation)
     print(board)
 
-    situation = '''
-    ＋－＋－象－士－將－＋－＋－＋－＋
-    ｜　｜　｜　｜＼｜／｜　｜　｜　｜
-    ＋－＋－＋－＋－士－＋－＋－＋－＋
-    ｜　｜　｜　｜／｜＼｜　｜　｜　｜
-    ＋－＋－＋－＋－象－＋－＋－＋－＋
-    ｜　｜　｜　｜　｜　｜　｜　｜　｜
-    ＋－＋－＋－＋－＋－＋－＋－＋－＋
-    ｜　｜　｜　｜　｜　｜　｜　｜　｜
-    ＋－＋－＋－＋－＋－＋－傌－俥－俥
-    ＋－＋－相－＋－＋－＋－＋－＋－＋
-    ｜　｜　｜　｜　｜　｜　｜　｜　｜
-    ＋－車－兵－＋－兵－＋－＋－＋－＋
-    ｜　｜　｜　｜　｜　｜　｜　｜　｜
-    ＋－＋－＋－卒－相－＋－＋－＋－＋
-    ｜　｜　｜　｜＼｜／｜　｜　｜　｜
-    ＋－＋－＋－＋－卒－＋－＋－＋－＋
-    ｜　｜　｜　｜／｜＼｜　｜　｜　｜
-    ＋－＋－＋－帥－＋－＋－＋－＋－＋
-    '''
-    board = Board(situation)
+    from constants import well_known_1
+    board = Board(well_known_1)
     print(board)
 
 
 if __name__ == '__main__':
-    test()
+    # test()
+    test_parse_action()
