@@ -1,5 +1,25 @@
 # cchess
 
+### Design decisions
+
+
+
+#### observation
+
+以当前玩家的视角观察，包括坐标系、行、列，以及当前的合法走法
+
+
+
+
+
+#### action
+
+以当前玩家的视角行动，action space: `MultiDiscrete(9, 10, 9, 10)`
+
+前面2维表示源位置`(col, row)`，后面2维表示目标位置
+
+
+
 
 
 ### TODO

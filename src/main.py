@@ -1,15 +1,23 @@
 from player import Human, NoBrain
 from env import Env
+from piece import Camp
 
 
 def play_a_game():
-    players = [Human(env, 0), NoBrain(env, 1)]
-    env = Env(players[0])
+    players = {Camp.RED: Human(Camp.RED.value), Camp.BLACK: Human(Camp.BLACK.value)}
+    env = Env()
+    for p in players.values():
+        p.env = env
 
-
-    env.reset()
-
-    env.run()
+    ob = env.reset()
+    while True:
+        env.render()
+        player = players[ob['next_player']]
+        action = player.make_decision(**ob)
+        ob, reward, done, info = env.step(action)
+        if done:
+            break
+    print('game over.')
 
 
 if __name__ == '__main__':

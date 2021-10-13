@@ -69,16 +69,19 @@ class Board:
     def observe(self):
         plane = np.zeros((N_ROWS, N_COLS), np.int32)
         for p in self.situation:
-            c = piece_2_char(p)
+            c = piece_2_char(p.camp, p.force)
             idx = PIECE_CHARS.index(c)
             plane[p.row, p.col] = idx
         return plane
+
+    def get_valid_actions(self, camp):
+        pass
 
     def can_move(self, x, y, dx, dy):
         return False
 
     def move(self, x, y, dx, dy):
-        pass
+        print(x, y, dx, dy)
 
     def remove(self, x, y):
         pass
@@ -287,8 +290,8 @@ def test():
     # board = Board(situation)
     # print(board)
 
-    from constants import well_known_1
-    board = Board(well_known_1)
+    from constants import well_known_1, FULL_BOARD
+    board = Board(FULL_BOARD)
     print(board)
 
 

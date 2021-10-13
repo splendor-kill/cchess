@@ -15,8 +15,8 @@ PLACE_CHARS = '＋Ｘ'
 
 
 class Camp(IntEnum):
-    RED = 1
-    BLACK = 2
+    BLACK = 1
+    RED = 2
 
 
 class Force(IntEnum):
