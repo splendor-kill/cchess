@@ -27,8 +27,8 @@ class Env:
 
     def step(self, action):
         piece = action['piece']
-        dx, dy = action['dst']
-        self.board.move(piece.col, piece.row, dx, dy)
+        dst = action['dst']
+        self.board.make_move(piece, dst)
         self._switch_player()
         state = self.board.observe()
         done, reward = self._check_end()

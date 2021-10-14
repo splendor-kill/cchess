@@ -8,3 +8,13 @@ class Bing(Piece):
 
     def can_move(self, board, dx, dy):
         return False
+
+    def traverse(self, col):
+        assert abs(self.col - col) == 1
+        self.col = col
+
+    def advance(self, d):
+        self.row += 1
+
+    def retreat(self, d):
+        raise ValueError('cannot do this')

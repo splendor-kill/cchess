@@ -80,9 +80,6 @@ class Board:
     def can_move(self, x, y, dx, dy):
         return False
 
-    def move(self, x, y, dx, dy):
-        print(x, y, dx, dy)
-
     def remove(self, x, y):
         pass
 

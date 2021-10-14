@@ -1,5 +1,6 @@
 import os
 from enum import IntEnum
+from board import Action
 
 APPEAR_BLACK = ''
 APPEAR_RED = ''
@@ -89,11 +90,21 @@ class Piece:
         c = appear + c + ENDC
         return c
 
-    def move(self, board, dx, dy):
-        pass
-
-    def can_move(self, board, dx, dy):
-        pass
+    def can_move(self, board, action, param):
+        d_fn = {Action.TRAVERSE: self.traverse,
+                Action.ADVANCE: self.advance,
+                Action.RETREAT: self.retreat}
+        fn = d_fn[action]
+        return False, fn(param)
 
     def get_legal_moves(self):
+        pass
+
+    def traverse(self, col):
+        pass
+
+    def advance(self, d):
+        pass
+
+    def retreat(self, d):
         pass

@@ -51,8 +51,11 @@ class Human(Player):
             'bing': piece_2_char(Camp.RED, Force.BING),
             'zu': piece_2_char(Camp.BLACK, Force.BING),
             'ping': ACTION_ALIAS[Action.TRAVERSE],
+            '=': ACTION_ALIAS[Action.TRAVERSE],
             'jin': ACTION_ALIAS[Action.ADVANCE],
+            '+': ACTION_ALIAS[Action.ADVANCE],
             'tui': ACTION_ALIAS[Action.RETREAT],
+            '-': ACTION_ALIAS[Action.RETREAT],
         }
         directive = directive.lower()
         for k, v in pinyin.items():
