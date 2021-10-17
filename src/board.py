@@ -1,5 +1,5 @@
 from collections import defaultdict
-
+from enum import IntEnum
 import numpy as np
 
 from constants import EMPTY_BOARD
@@ -163,6 +163,14 @@ class Board:
             return pieces[4]
 
     def make_move(self, piece, dst):
+        from board import Action
+        d_fn = {Action.TRAVERSE: piece.traverse,
+                Action.ADVANCE: piece.advance,
+                Action.RETREAT: piece.retreat}
+        fn = d_fn[action]
+        return False, fn(param)
+
+
         piece_at_dst = None
         for p in self.situation:
             if p.col == dst[0] and p.row == dst[1]:

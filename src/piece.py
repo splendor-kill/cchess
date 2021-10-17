@@ -1,6 +1,5 @@
 import os
 from enum import IntEnum
-from board import Action
 
 APPEAR_BLACK = ''
 APPEAR_RED = ''
@@ -90,7 +89,8 @@ class Piece:
         c = appear + c + ENDC
         return c
 
-    def can_move(self, board, action, param):
+    def can_move(self, board_, action, param):
+        from board import Action
         d_fn = {Action.TRAVERSE: self.traverse,
                 Action.ADVANCE: self.advance,
                 Action.RETREAT: self.retreat}

@@ -63,7 +63,7 @@ class Human(Player):
         directive = directive.replace(' ', '')
         force, action, act_param, piece, dst = parse_action(directive, camp, board)
         print(force, action, act_param, piece, dst)
-        return {'piece': piece, 'dst': dst}
+        return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
 
 
 class NoBrain(Player):
