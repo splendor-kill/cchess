@@ -82,6 +82,7 @@ class Piece:
         self.col = col
         self.camp = camp
         self.force = force
+        self.heading = -1 if camp == Camp.RED else 1
 
     def __str__(self):
         c = piece_2_char(self.camp, self.force)
@@ -89,13 +90,19 @@ class Piece:
         c = appear + c + ENDC
         return c
 
-    def can_move(self, board_, action, param):
-        from board import Action
+    def can_move(self, board_, action, act_param):
+        return False
+
+    def calc_dst(self, action, act_param):
+        from board import Action, N_COLS
         d_fn = {Action.TRAVERSE: self.traverse,
                 Action.ADVANCE: self.advance,
                 Action.RETREAT: self.retreat}
         fn = d_fn[action]
-        return False, fn(param)
+        col, row = fn(act_param)
+        if self.camp == Camp.RED:  # convert to board coordinate system
+            col = N_COLS - 1 - col
+        return col, row
 
     def get_legal_moves(self):
         pass
@@ -107,4 +114,19 @@ class Piece:
         pass
 
     def retreat(self, d):
+        pass
+
+    def to_abs_col(self, col):
+        from board import N_COLS
+        m = (N_COLS - 1) // 2
+        return self.heading * (col - m) + m
+
+    def to_self_view(self, col, row):
+        from board import N_COLS, N_ROWS
+        if self.camp == Camp.RED:
+            col = N_COLS - 1 - col
+            row = N_ROWS - 1 - row
+        return col, row
+
+    def to_board_view(self, board_):
         pass

@@ -11,13 +11,16 @@ class Pao(Piece):
 
     def traverse(self, col):
         assert 1 <= col <= 9
+        col -= 1  # convert to 0-based
         assert self.col != col
-        self.col = col
+        return col, self.row
 
     def advance(self, d):
-        assert self.row + d < 9
-        self.row += d
+        row = self.row + self.heading * d
+        assert row < 9
+        return self.col, row
 
     def retreat(self, d):
-        assert self.row - d > 0
-        self.row -= d
+        row = self.row - self.heading * d
+        assert row > 0
+        return self.col, row

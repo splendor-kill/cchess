@@ -80,6 +80,12 @@ class Board:
     def can_move(self, x, y, dx, dy):
         return False
 
+    def piece_at(self, col, row):
+        for p in self.situation:
+            if p.col == col and p.row == row:
+                return p
+        return None
+
     def remove(self, x, y):
         pass
 
@@ -163,14 +169,6 @@ class Board:
             return pieces[4]
 
     def make_move(self, piece, dst):
-        from board import Action
-        d_fn = {Action.TRAVERSE: piece.traverse,
-                Action.ADVANCE: piece.advance,
-                Action.RETREAT: piece.retreat}
-        fn = d_fn[action]
-        return False, fn(param)
-
-
         piece_at_dst = None
         for p in self.situation:
             if p.col == dst[0] and p.row == dst[1]:
@@ -185,6 +183,8 @@ class Board:
                 # TODO check if can move by rule
                 self.situation.remove(piece_at_dst)
                 print(f'capture the piece {piece_at_dst}')
+                piece.col = dst[0]
+                piece.row = dst[1]
             else:
                 raise ValueError('illegal move')
 
@@ -244,23 +244,9 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     assert act_param in COL_ALIAS_INV
     act_param = COL_ALIAS_INV[act_param]
 
-    dst = calc_dst(piece, action, act_param)
+    dst = piece.calc_dst(action, act_param)
 
     return force, action, act_param, piece, dst
-
-
-def calc_dst(piece, action, act_param):
-    dir_ = -1 if piece.camp == Camp.RED else 1
-    if action == Action.TRAVERSE:
-        dst_col = act_param - 1
-        dst_row = piece.row
-    elif action == Action.ADVANCE:
-        dst_col = piece.col
-        dst_row = piece.row + dir_ * act_param
-    else:  # Action.RETREAT
-        dst_col = piece.col
-        dst_row = piece.row - dir_ * act_param
-    return dst_col, dst_row
 
 
 def test_parse_action():
