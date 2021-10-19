@@ -18,6 +18,10 @@ class Camp(IntEnum):
     BLACK = 1
     RED = 2
 
+    def opponent(self):
+        op = {Camp.RED: Camp.BLACK, Camp.BLACK: Camp.RED}
+        return op[self]
+
 
 class Force(IntEnum):
     SHUAI = 1
@@ -121,12 +125,10 @@ class Piece:
         m = (N_COLS - 1) // 2
         return self.heading * (col - m) + m
 
-    def to_self_view(self, col, row):
-        from board import N_COLS, N_ROWS
+    def with_my_view(self, col=None, row=None):
+        from board import toggle_view
+        col = self.col if col is None else col
+        row = self.row if row is None else row
         if self.camp == Camp.RED:
-            col = N_COLS - 1 - col
-            row = N_ROWS - 1 - row
+            return toggle_view(col, row)
         return col, row
-
-    def to_board_view(self, board_):
-        pass

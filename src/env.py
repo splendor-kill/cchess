@@ -48,5 +48,4 @@ class Env:
         return False, 0
 
     def _switch_player(self):
-        op = {Camp.RED: Camp.BLACK, Camp.BLACK: Camp.RED}
-        self.cur_player = op[self.cur_player]
+        self.cur_player = self.cur_player.opponent()

@@ -45,12 +45,27 @@ ROW_INDICATOR_ALIAS = {
 ROW_INDICATOR_ALIAS_INV = {v: k for k, v in ROW_INDICATOR_ALIAS.items()}
 
 
+def toggle_view(col, row):
+    col = N_COLS - 1 - col
+    row = N_ROWS - 1 - row
+    return col, row
+
+
 class Board:
     """
-         o ------- x(j)
-         |
-         |
-    y(i) |
+           cxj
+     012345678
+    0         9
+    1         8
+    2         7
+    3         6
+    4         5
+    5         4
+    6         3
+  r 7         2
+  y 8         1
+  i 9         0
+     876543210
     """
 
     def __init__(self, situation):
@@ -77,7 +92,7 @@ class Board:
     def get_valid_actions(self, camp):
         pass
 
-    def can_move(self, x, y, dx, dy):
+    def can_move(self, c, r, dx, dy):
         return False
 
     def piece_at(self, col, row):
@@ -86,7 +101,7 @@ class Board:
                 return p
         return None
 
-    def remove(self, x, y):
+    def remove(self, c, r):
         pass
 
     @staticmethod
@@ -268,18 +283,18 @@ def test_parse_action():
 
 
 def test():
-    # situation = [Piece(0, 4, Camp.BLACK, Force.SHUAI),
-    #              Piece(2, 3, Camp.BLACK, Force.SHI), Piece(2, 4, Camp.RED, Force.BING),
-    #              Piece(2, 8, Camp.BLACK, Force.XIANG),
-    #              Piece(3, 0, Camp.BLACK, Force.BING),
-    #              Piece(5, 6, Camp.BLACK, Force.MA),
-    #              Piece(6, 2, Camp.RED, Force.BING), Piece(6, 6, Camp.BLACK, Force.BING),
-    #              Piece(7, 4, Camp.RED, Force.JU),
-    #              Piece(8, 3, Camp.BLACK, Force.BING), Piece(8, 5, Camp.BLACK, Force.BING),
-    #              Piece(9, 4, Camp.RED, Force.SHUAI),
-    #              ]
-    # board = Board(situation)
-    # print(board)
+    situation = [Shuai(0, 4, Camp.BLACK),
+                 Shi(2, 3, Camp.BLACK), Bing(2, 4, Camp.RED),
+                 Xiang(2, 8, Camp.BLACK, ),
+                 Bing(3, 0, Camp.BLACK),
+                 Ma(5, 6, Camp.BLACK),
+                 Bing(6, 2, Camp.RED), Bing(6, 6, Camp.BLACK),
+                 Ju(7, 4, Camp.RED),
+                 Bing(8, 3, Camp.BLACK), Bing(8, 5, Camp.BLACK),
+                 Shuai(9, 4, Camp.RED),
+                 ]
+    board = Board(situation)
+    print(board)
 
     from constants import well_known_1, FULL_BOARD
     board = Board(FULL_BOARD)
@@ -287,5 +302,6 @@ def test():
 
 
 if __name__ == '__main__':
+    from force import *
     test()
     # test_parse_action()
