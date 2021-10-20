@@ -1,5 +1,5 @@
-from board import Piece
-from board import Force
+from piece import Force
+from piece import Piece
 
 
 class Shuai(Piece):
@@ -23,3 +23,11 @@ class Shuai(Piece):
     def retreat(self, x):
         assert self.row - 1 > 0
         return self.col, self.row - self.heading * 1
+
+    def get_valid_pos(self, board_):
+        black_palace = {(3, 0), (4, 0), (5, 0),
+                        (3, 1), (4, 1), (5, 1),
+                        (3, 2), (4, 2), (5, 2)}
+        red_palace = [(3, 9), (4, 9), (5, 9),
+                      (3, 8), (4, 8), (5, 8),
+                      (3, 7), (4, 7), (5, 7)]

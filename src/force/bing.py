@@ -1,5 +1,5 @@
-from board import Piece
-from board import Force
+from piece import Force
+from piece import Piece
 
 
 class Bing(Piece):

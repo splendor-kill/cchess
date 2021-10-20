@@ -1,5 +1,5 @@
-from board import Piece
-from board import Force
+from piece import Force
+from piece import Piece
 
 
 class Ju(Piece):
@@ -49,14 +49,14 @@ class Ju(Piece):
             p = board_.piece_at(c, self.row)
             if p is not None:
                 if p.camp != self.camp:
-                    pos.append((self.col, r))
+                    pos.append((c, self.row))
                 break
             pos.append((c, self.row))
         for c in range(self.col - 1, -1, -1):  # to left
             p = board_.piece_at(c, self.row)
             if p is not None:
                 if p.camp != self.camp:
-                    pos.append((self.col, r))
+                    pos.append((c, self.row))
                 break
             pos.append((c, self.row))
         return pos

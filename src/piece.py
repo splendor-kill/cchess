@@ -132,3 +132,10 @@ class Piece:
         if self.camp == Camp.RED:
             return toggle_view(col, row)
         return col, row
+
+    def move_to(self, board_, col, row):
+        p = board_.piece_at(col, row)
+        if p is not None:
+            raise ValueError('dst pos nonempty')
+        self.col = col
+        self.row = row

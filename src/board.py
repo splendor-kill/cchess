@@ -104,6 +104,12 @@ class Board:
     def remove(self, c, r):
         pass
 
+    def throw_away(self, piece):
+        if piece in self.situation:
+            self.situation.remove(piece)
+        else:
+            raise ValueError('piece not found')
+
     @staticmethod
     def _parse(board):
         import force
