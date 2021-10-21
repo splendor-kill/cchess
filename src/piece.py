@@ -98,14 +98,18 @@ class Piece:
         return False
 
     def calc_dst(self, action, act_param):
-        from board import Action, N_COLS
+        """get the dst position
+
+        :param action: with self perspective
+        :param act_param: with self perspective
+        :return: (col, row), in board coordinate system
+        """
+        from board import Action
         d_fn = {Action.TRAVERSE: self.traverse,
                 Action.ADVANCE: self.advance,
                 Action.RETREAT: self.retreat}
         fn = d_fn[action]
         col, row = fn(act_param)
-        if self.camp == Camp.RED:  # convert to board coordinate system
-            col = N_COLS - 1 - col
         return col, row
 
     def get_legal_moves(self):

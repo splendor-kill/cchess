@@ -17,13 +17,13 @@ class Ma(Piece):
         raise ValueError('cannot do this')
 
     def advance(self, col):
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 1 or d == 2
         return col, self.row + self.heading * (3 - d)
 
     def retreat(self, col):
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 1 or d == 2
         return col, self.row - self.heading * (3 - d)

@@ -15,8 +15,7 @@ class Pao(Piece):
         return (col, row) in pos
 
     def traverse(self, col):
-        assert 1 <= col <= 9
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         assert self.col != col
         return col, self.row
 

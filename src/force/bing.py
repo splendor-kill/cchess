@@ -26,7 +26,7 @@ class Bing(Piece):
         return False
 
     def traverse(self, col):
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         assert abs(self.col - col) == 1
         return col, self.row
 

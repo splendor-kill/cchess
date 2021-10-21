@@ -1,4 +1,3 @@
-import logging
 import unittest
 
 from board import Board, N_COLS, N_ROWS
@@ -702,5 +701,4 @@ class BingTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    logging.basicConfig()
     unittest.main(verbosity=2)

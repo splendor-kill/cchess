@@ -14,8 +14,8 @@ class Shuai(Piece):
         return (col, row) in pos
 
     def traverse(self, col):
-        assert col in (4, 5, 6)
-        col -= 1  # convert to 0-based
+        assert col in (3, 4, 5)
+        col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 1
         return col, self.row

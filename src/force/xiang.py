@@ -17,7 +17,7 @@ class Xiang(Piece):
         raise ValueError('cannot do this')
 
     def advance(self, col):
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 2
         row = self.row + self.heading * 2
@@ -25,7 +25,7 @@ class Xiang(Piece):
         return col, row
 
     def retreat(self, col):
-        col -= 1  # convert to 0-based
+        col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 2
         row = self.row - self.heading * 2

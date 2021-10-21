@@ -46,9 +46,9 @@ ROW_INDICATOR_ALIAS = {
 ROW_INDICATOR_ALIAS_INV = {v: k for k, v in ROW_INDICATOR_ALIAS.items()}
 
 
-def toggle_view(col, row):
-    col = N_COLS - 1 - col
-    row = N_ROWS - 1 - row
+def toggle_view(col=None, row=None):
+    col = N_COLS - 1 - col if col is not None else None
+    row = N_ROWS - 1 - row if row is not None else None
     return col, row
 
 
@@ -92,9 +92,6 @@ class Board:
 
     def get_valid_actions(self, camp):
         pass
-
-    def can_move(self, c, r, dx, dy):
-        return False
 
     def piece_at(self, col, row):
         for p in self.situation:
@@ -150,28 +147,16 @@ class Board:
                 d[p.col].append(p)
         return d
 
-    def get_piece(self, camp, force, col, row_indicator: RowIndicator = None):
-        """
-
-        :param camp:
-        :param force:
-        :param col: relative to camp self perspective, in [1..9]
-        :param row_indicator:
-        :return: piece
-        """
-
-        col -= 1
-        if camp == Camp.RED:  # from right to left
-            col = N_COLS - 1 - col
+    def get_piece(self, camp, force_, col, row_indicator: RowIndicator = None):
         pieces = []
         for p in self.situation:
-            if p.camp == camp and p.force == force and p.col == col:
+            if p.camp == camp and p.force == force_ and p.col == col:
                 pieces.append(p)
         n_pieces = len(pieces)
         if n_pieces == 1:
             return pieces[0]
 
-        rev = camp == Camp.RED
+        rev = camp == Camp.BLACK
         pieces.sort(key=lambda p: p.row, reverse=rev)
         if row_indicator == RowIndicator.FRONT:
             assert n_pieces > 1
@@ -243,6 +228,9 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     src_col = cmd[i + 1]
     if src_col in COL_ALIAS_INV:
         src_col = COL_ALIAS_INV[src_col]
+        src_col -= 1  # to internal repr
+        if camp == Camp.RED:  # from right to left
+            src_col, _ = toggle_view(src_col, None)
     else:  # need ref board
         assert prefix is not None
         col2pieces = board.filter(camp, force)
@@ -268,8 +256,18 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     action = ACTION_ALIAS_INV[a]
     i = cmd.index(a)
     act_param = cmd[i + 1]
-    assert act_param in COL_ALIAS_INV
+    if act_param not in COL_ALIAS_INV:
+        raise ValueError('invalid action param')
     act_param = COL_ALIAS_INV[act_param]
+    param_must_be_col = {(Force.JU, Action.TRAVERSE),
+                         (Force.MA, Action.ADVANCE), (Force.MA, Action.RETREAT),
+                         (Force.XIANG, Action.ADVANCE), (Force.XIANG, Action.RETREAT),
+                         (Force.SHI, Action.ADVANCE), (Force.SHI, Action.RETREAT),
+                         (Force.SHUAI, Action.TRAVERSE),
+                         (Force.PAO, Action.TRAVERSE),
+                         (Force.BING, Action.TRAVERSE)}
+    if (piece.force, action) in param_must_be_col:
+        act_param -= 1
 
     dst = piece.calc_dst(action, act_param)
 
@@ -316,5 +314,5 @@ def test():
 if __name__ == '__main__':
     from force import *
 
-    # test()
-    test_parse_action()
+    test()
+    # test_parse_action()
