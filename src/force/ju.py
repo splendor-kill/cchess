@@ -3,8 +3,8 @@ from piece import Piece
 
 
 class Ju(Piece):
-    def __init__(self, row, col, camp):
-        super().__init__(row, col, camp, Force.JU)
+    def __init__(self, camp, col, row):
+        super().__init__(camp, Force.JU, col, row)
 
     def can_move(self, board_, col, row):
         from board import N_COLS, N_ROWS
@@ -82,7 +82,7 @@ def test_can_move():
     print((col, row), valid)
     situation = [p]
     for c, r in valid:
-        p = Ju(r, c, camp.opponent())
+        p = Ju(camp.opponent(), c, r)
         situation.append(p)
     board = Board(situation)
     print(board)

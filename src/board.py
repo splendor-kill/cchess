@@ -2,6 +2,7 @@ from collections import defaultdict
 from enum import IntEnum
 import numpy as np
 
+import force
 from constants import EMPTY_BOARD
 from piece import *
 
@@ -110,6 +111,11 @@ class Board:
         else:
             raise ValueError('piece not found')
 
+    def get_shuai(self, camp):
+        for p in self.situation:
+            if p.camp == camp and p.force == Force.SHUAI:
+                return p
+
     @staticmethod
     def _parse(board):
         import force
@@ -134,7 +140,7 @@ class Board:
                 if c in PIECE_CHARS:
                     camp, force = recog_piece(c)
                     clz = force_clz[force]
-                    sit.append(clz(i, j, camp))
+                    sit.append(clz(camp, j, i))
         return sit
 
     def filter(self, camp, force):
@@ -289,15 +295,15 @@ def test_parse_action():
 
 
 def test():
-    situation = [Shuai(0, 4, Camp.BLACK),
-                 Shi(2, 3, Camp.BLACK), Bing(2, 4, Camp.RED),
-                 Xiang(2, 8, Camp.BLACK, ),
-                 Bing(3, 0, Camp.BLACK),
-                 Ma(5, 6, Camp.BLACK),
-                 Bing(6, 2, Camp.RED), Bing(6, 6, Camp.BLACK),
-                 Ju(7, 4, Camp.RED),
-                 Bing(8, 3, Camp.BLACK), Bing(8, 5, Camp.BLACK),
-                 Shuai(9, 4, Camp.RED),
+    situation = [Shuai(Camp.BLACK, 4, 0),
+                 Shi(Camp.BLACK, 3, 2), Bing(Camp.RED, 4, 2),
+                 Xiang(Camp.BLACK, 8, 2),
+                 Bing(Camp.BLACK, 0, 3),
+                 Ma(Camp.BLACK, 6, 5),
+                 Bing(Camp.RED, 2, 6), Bing(Camp.BLACK, 6, 6),
+                 Ju(Camp.RED, 4, 7),
+                 Bing(Camp.BLACK, 3, 8), Bing(Camp.BLACK, 5, 8),
+                 Shuai(Camp.RED, 4, 9),
                  ]
     board = Board(situation)
     print(board)
@@ -309,5 +315,6 @@ def test():
 
 if __name__ == '__main__':
     from force import *
-    test()
-    # test_parse_action()
+
+    # test()
+    test_parse_action()

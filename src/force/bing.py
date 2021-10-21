@@ -3,8 +3,8 @@ from piece import Piece
 
 
 class Bing(Piece):
-    def __init__(self, row, col, camp):
-        super().__init__(row, col, camp, Force.BING)
+    def __init__(self, camp, col, row):
+        super().__init__(camp, Force.BING, col, row)
 
     def can_move(self, board_, col, row):
         from board import N_COLS, N_ROWS
@@ -46,7 +46,7 @@ def test_can_move():
     from piece import Camp
     col, row = 4, 9
     camp = Camp.BLACK
-    p = Bing(row, col, camp)
+    p = Bing(camp, col, row)
     situation = [p]
     board = Board(situation)
     valid = []
@@ -58,7 +58,7 @@ def test_can_move():
     print((col, row), valid)
     situation = [p]
     for c, r in valid:
-        p = Bing(r, c, camp.opponent())
+        p = Bing(camp.opponent(), c, r)
         situation.append(p)
     board = Board(situation)
     print(board)

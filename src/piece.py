@@ -74,16 +74,16 @@ def recog_piece(piece: str):
 
 
 class Piece:
-    def __init__(self, row, col, camp, force):
+    def __init__(self, camp, force, col, row):
         """xiangqi 术语参考 http://wxf.ca/xq/computer/XIANGQI_TERMS_IN_ENGLISH.pdf
 
-        :param row: rank
         :param col: file
+        :param row: rank
         :param camp: red or black
         :param force: piece type
         """
-        self.row = row
         self.col = col
+        self.row = row
         self.camp = camp
         self.force = force
         self.heading = -1 if camp == Camp.RED else 1
