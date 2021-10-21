@@ -249,6 +249,8 @@ def parse_action(cmd: str, camp: Camp, board: Board):
                 raise ValueError('undistinguishable')
 
     piece = board.get_piece(camp, force, src_col, prefix)
+    if piece is None:
+        raise ValueError('piece not found')
 
     n = set(cmd).intersection(ACTION_ALIAS_INV)
     assert len(n) == 1

@@ -20,12 +20,14 @@ class Ju(Piece):
         return col, self.row
 
     def advance(self, d):
-        assert self.row + d < 9
-        return self.col, self.row + self.heading * d
+        row = self.row + self.heading * d
+        assert 0 <= row <= 9
+        return self.col, row
 
     def retreat(self, d):
-        assert self.row - d > 0
-        return self.col, self.row - self.heading * d
+        row = self.row - self.heading * d
+        assert 0 <= row <= 9
+        return self.col, row
 
     def get_valid_pos(self, board_):
         from board import N_COLS, N_ROWS
