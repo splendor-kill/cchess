@@ -212,7 +212,7 @@ def parse_action(cmd: str, camp: Camp, board: Board):
 
     cmd = cmd.strip()
     if len(cmd) == 3:
-        if cmd[-1] == ACTION_ALIAS[Action.ADVANCE]:  # 处理如“兵七进”
+        if cmd[-1] in {ACTION_ALIAS[Action.ADVANCE], ACTION_ALIAS[Action.RETREAT]}:  # 处理如“兵七进”
             cmd = cmd + '1'
     assert len(cmd) in (4, 5)
     n = set(cmd).intersection(FORCE_ALIAS_INV)

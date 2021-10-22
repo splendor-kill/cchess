@@ -21,7 +21,8 @@ class Xiang(Piece):
         d = abs(self.col - col)
         assert d == 2
         row = self.row + self.heading * 2
-        assert row < 5
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 4
         return col, row
 
     def retreat(self, col):
@@ -29,6 +30,8 @@ class Xiang(Piece):
         d = abs(self.col - col)
         assert d == 2
         row = self.row - self.heading * 2
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 4
         return col, row
 
     def get_valid_pos(self, board_):
