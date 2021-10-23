@@ -1,5 +1,5 @@
 from piece import Camp, Force, piece_2_char
-from board import parse_action, Action, ACTION_ALIAS
+from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator
 
 
 class Player:
@@ -56,6 +56,20 @@ class Human(Player):
             '+': ACTION_ALIAS[Action.ADVANCE],
             'tui': ACTION_ALIAS[Action.RETREAT],
             '-': ACTION_ALIAS[Action.RETREAT],
+            'qian': ROW_INDICATOR_ALIAS[RowIndicator.FRONT],
+            'zhong': ROW_INDICATOR_ALIAS[RowIndicator.MID],
+            'hou': ROW_INDICATOR_ALIAS[RowIndicator.REAR],
+            'er': ROW_INDICATOR_ALIAS[RowIndicator.SECOND],
+            'san': ROW_INDICATOR_ALIAS[RowIndicator.THIRD],
+            'si': ROW_INDICATOR_ALIAS[RowIndicator.FORTH],
+            'wu': ROW_INDICATOR_ALIAS[RowIndicator.FIFTH],
+            'front': ROW_INDICATOR_ALIAS[RowIndicator.FRONT],
+            'mid': ROW_INDICATOR_ALIAS[RowIndicator.MID],
+            'rear': ROW_INDICATOR_ALIAS[RowIndicator.REAR],
+            'second': ROW_INDICATOR_ALIAS[RowIndicator.SECOND],
+            'third': ROW_INDICATOR_ALIAS[RowIndicator.THIRD],
+            'forth': ROW_INDICATOR_ALIAS[RowIndicator.FORTH],
+            'fifth': ROW_INDICATOR_ALIAS[RowIndicator.FIFTH],
         }
         directive = directive.lower()
         for k, v in pinyin.items():

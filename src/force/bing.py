@@ -26,11 +26,13 @@ class Bing(Piece):
         return False
 
     def traverse(self, col):
-        col, _ = self.with_my_view(col, None)
+        col, row = self.with_my_view(col, self.row)
         assert abs(self.col - col) == 1
+        assert 4 < row <= 9
         return col, self.row
 
     def advance(self, d):
+        assert d == 1
         return self.col, self.row + self.heading * 1
 
     def retreat(self, d):

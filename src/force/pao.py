@@ -21,12 +21,12 @@ class Pao(Piece):
 
     def advance(self, d):
         row = self.row + self.heading * d
-        assert row < 9
+        assert 0 <= row <= 9
         return self.col, row
 
     def retreat(self, d):
         row = self.row - self.heading * d
-        assert row > 0
+        assert 0 <= row <= 9
         return self.col, row
 
     def get_valid_pos(self, board_):

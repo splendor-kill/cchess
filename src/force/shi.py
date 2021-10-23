@@ -21,13 +21,19 @@ class Shi(Piece):
         col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 1
-        return col, self.row + self.heading * 1
+        row = self.row + self.heading * 1
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 2
+        return col, row
 
     def retreat(self, col):
         col, _ = self.with_my_view(col, None)
         d = abs(self.col - col)
         assert d == 1
-        return col, self.row - self.heading * 1
+        row = self.row - self.heading * 1
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 2
+        return col, row
 
     def get_valid_pos(self, board_):
         black_palace = {(3, 0): [(4, 1)], (5, 0): [(4, 1)],

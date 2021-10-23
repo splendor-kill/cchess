@@ -235,14 +235,15 @@ def parse_action(cmd: str, camp: Camp, board: Board):
         assert prefix is not None
         col2pieces = board.filter(camp, force)
         if len(col2pieces) == 1:
-            (col, piece), = col2pieces.items()
-            assert piece != Force.BING and prefix in (RowIndicator.FRONT, RowIndicator.REAR) or piece == Force.BING
+            (col, pieces), = col2pieces.items()
+            sample = pieces[0]
+            assert sample.force != Force.BING and prefix in (RowIndicator.FRONT, RowIndicator.REAR) \
+                   or sample.force == Force.BING
             src_col = col
         else:
             assert force == Force.BING
             if prefix is None:
                 raise ValueError('undistinguishable')
-            prefix = ROW_INDICATOR_ALIAS_INV[prefix]
             if prefix in (RowIndicator.MID, RowIndicator.THIRD, RowIndicator.FORTH):
                 src_col = max(col2pieces, key=lambda k: len(col2pieces[k]))
             else:
@@ -257,7 +258,7 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     (a), = n  # get the unique element
     action = ACTION_ALIAS_INV[a]
     i = cmd.index(a)
-    act_param = cmd[i + 1]
+    act_param = cmd[i + 1] if i + 1 < len(cmd) else '1'
     if act_param not in COL_ALIAS_INV:
         raise ValueError('invalid action param')
     act_param = COL_ALIAS_INV[act_param]

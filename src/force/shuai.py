@@ -21,12 +21,18 @@ class Shuai(Piece):
         return col, self.row
 
     def advance(self, x):
-        assert self.row + 1 < 3
-        return self.col, self.row + self.heading * 1
+        assert x == 1
+        row = self.row + self.heading * 1
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 2
+        return self.col, row
 
     def retreat(self, x):
-        assert self.row - 1 > 0
-        return self.col, self.row - self.heading * 1
+        assert x == 1
+        row = self.row - self.heading * 1
+        _, row_in_my_view = self.with_my_view(None, row)
+        assert 0 <= row_in_my_view <= 2
+        return self.col, row
 
     def get_valid_pos(self, board_):
         black_palace = {(3, 0): [(3, 1), (4, 0)], (4, 0): [(3, 0), (5, 0), (4, 1)], (5, 0): [(4, 0), (5, 1)],
