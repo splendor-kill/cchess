@@ -26,8 +26,8 @@
 
 - [ ] env
   - [ ] GUI
-  - [ ] action 引起将帅碰面
-  - [ ] action 引起被将军
+  - [x] action 引起将帅碰面
+  - [x] action 引起被将军
 - [ ] model
 - [ ] MCTS
 - [ ] 

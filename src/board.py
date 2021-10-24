@@ -1,8 +1,7 @@
 from collections import defaultdict
-from enum import IntEnum
+
 import numpy as np
 
-import force
 from constants import EMPTY_BOARD
 from piece import *
 
@@ -200,6 +199,18 @@ class Board:
             else:
                 raise ValueError('illegal move')
 
+    def check_if_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
+        col1, row1 = shuai1_pos
+        col2, row2 = shuai2_pos
+        if col1 != col2:
+            return False
+        lb, ub = min(row1, row2), max(row1, row2)
+        for r in range(lb + 1, ub - 1):  # have any piece in between
+            p = self.piece_at(col1, r)
+            if p is not None and p is not ignore_piece:
+                return False
+        return True
+
 
 def parse_action(cmd: str, camp: Camp, board: Board):
     """中式记法，参考 https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B
@@ -277,24 +288,6 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     return force, action, act_param, piece, dst
 
 
-def test_parse_action():
-    cmds = [
-        # '炮二平五',
-        '马8进7',
-        # '炮8平9',
-    ]
-    # '前㐷退六', '后炮平4', '卒3进1', '车9进1',
-    # '兵七进', '中兵进', '三兵平四', '三兵三平四', '前兵九平八']
-
-    from constants import FULL_BOARD
-    board = Board(FULL_BOARD)
-    for cmd in cmds:
-        force, action, act_param, piece, dst = parse_action(cmd, Camp.RED, board)
-        print(force, action, act_param, piece, dst)
-        board.make_move(piece, dst)
-        print(board)
-
-
 def test():
     situation = [Shuai(Camp.BLACK, 4, 0),
                  Shi(Camp.BLACK, 3, 2), Bing(Camp.RED, 4, 2),
@@ -309,7 +302,7 @@ def test():
     board = Board(situation)
     print(board)
 
-    from constants import well_known_1, FULL_BOARD
+    from constants import FULL_BOARD
     board = Board(FULL_BOARD)
     print(board)
 
@@ -318,4 +311,3 @@ if __name__ == '__main__':
     from force import *
 
     test()
-    # test_parse_action()

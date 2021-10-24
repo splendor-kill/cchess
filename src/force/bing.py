@@ -6,25 +6,6 @@ class Bing(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.BING, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-        dst_p = board_.piece_at(col, row)
-        if dst_p is not None and dst_p.camp == self.camp:
-            return False
-        mycol, myrow = self.with_my_view()
-        col, row = self.with_my_view(col, row)
-
-        if self.is_cross_river():
-            if col == mycol and row - myrow == 1:
-                return True
-            if row == myrow and abs(col - mycol) == 1:
-                return True
-        else:
-            return col == mycol and row - myrow == 1
-        return False
-
     def traverse(self, col):
         col, row = self.with_my_view(col, self.row)
         assert abs(self.col - col) == 1
@@ -42,14 +23,28 @@ class Bing(Piece):
         col, row = self.with_my_view()
         return row > 4
 
+    def get_valid_pos(self, board_):
+        test_pos = [(0, 1)]
+        if self.is_cross_river():
+            test_pos.extend([(1, 0), (-1, 0)])
+        poses = []
+        for pos in test_pos:
+            col, row = self.col + pos[0], self.row + self.heading * pos[1]
+            p = board_.piece_at(col, row)
+            if p is None or p.camp != self.camp:
+                if not self.will_cause_shuai_meet(board_, col, row):
+                    poses.append((col, row))
+        return poses
+
 
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
     from piece import Camp
-    col, row = 4, 9
+    from force.shuai import Shuai
+    col, row = 4, 8
     camp = Camp.BLACK
     p = Bing(camp, col, row)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
     board = Board(situation)
     valid = []
     for c in range(N_COLS):
@@ -58,7 +53,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
     for c, r in valid:
         p = Bing(camp.opponent(), c, r)
         situation.append(p)

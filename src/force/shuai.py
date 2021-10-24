@@ -6,13 +6,6 @@ class Shuai(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.SHUAI, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-        pos = self.get_valid_pos(board_)
-        return (col, row) in pos
-
     def traverse(self, col):
         assert col in (3, 4, 5)
         col, _ = self.with_my_view(col, None)
@@ -51,26 +44,18 @@ class Shuai(Piece):
         for c, r in test_pos:
             p = board_.piece_at(c, r)
             if p is None or p.camp != self.camp:
-                if not self.meet_enemy_shuai(board_, c, r):
+                if not self.will_cause_shuai_meet(board_, c, r):
                     pos.append((c, r))
         return pos
 
-    def meet_enemy_shuai(self, board_, col, row):
+    def will_cause_shuai_meet(self, board_, col, row):
         enemy_shuai = board_.get_shuai(self.camp.opponent())
         assert enemy_shuai is not None
-        if enemy_shuai.col != col:
-            return False
-        lb, ub = min(row, enemy_shuai.row), max(row, enemy_shuai.row)
-        for r in range(lb + 1, ub - 1):  # have any piece in between
-            p = board_.piece_at(col, r)
-            if p is not None:
-                return False
-        return True
+        return board_.check_if_shuai_meet((enemy_shuai.col, enemy_shuai.row), (col, row))
 
 
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
-    from constants import FULL_BOARD
     col, row = 4, 8
     camp = Camp.RED
     p = Shuai(camp, col, row)
@@ -88,7 +73,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
     for c, r in valid:
         p = Shuai(camp.opponent(), c, r)
         situation.append(p)

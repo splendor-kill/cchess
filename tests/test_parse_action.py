@@ -14,7 +14,7 @@ class JuActionTest(unittest.TestCase):
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
         p = Ju(camp, 9, 1)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         cmds = ['车9退2', '车9进9']
         for cmd in cmds:
@@ -26,7 +26,7 @@ class JuActionTest(unittest.TestCase):
         camp = Camp.RED
         col, row = 1, 4
         p = Ju(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
             force, action, act_param, piece, dst = parse_action(cmd, camp, board)
@@ -104,7 +104,7 @@ class MaActionTest(unittest.TestCase):
         camp = Camp.RED
         col, row = 3, 6
         p = Ma(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
             force, action, act_param, piece, dst = parse_action(cmd, camp, board)
@@ -119,7 +119,7 @@ class MaActionTest(unittest.TestCase):
         camp = Camp.BLACK
         col, row = 4, 6
         p = Ma(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
             force, action, act_param, piece, dst = parse_action(cmd, camp, board)
@@ -360,7 +360,7 @@ class ShuaiActionTest(unittest.TestCase):
         cmds = ['将5平3', '将5平7', '将5进2', '将5进3', '帅5退2']
         camp = Camp.RED
         p = Shuai(camp, 4, 8)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
@@ -397,7 +397,7 @@ class PaoActionTest(unittest.TestCase):
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
         p = Pao(camp, 9, 1)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         cmds = ['炮9退2', '炮9进9']
         for cmd in cmds:
@@ -479,15 +479,15 @@ class BingActionTest(unittest.TestCase):
             self.assertRaises(Exception, parse_action, cmd, camp, board)
 
     def test_parse_action3(self):
-        cmds = ['前兵3进', '中兵3进', '后兵3进', '前兵平2', '中兵平4', '二兵平4', '三兵进']
-        anss = [(6, 1), (6, 3), (6, 5), (7, 2), (5, 4), (5, 4), (6, 5)]
+        cmds = ['前兵3进', '中兵3进', '后兵3进', '前兵平2', '中兵平4', '二兵平4', '三兵进', '中兵进', '二兵三平四']
+        anss = [(6, 1), (6, 3), (6, 5), (7, 2), (5, 4), (5, 4), (6, 5), (6, 3), (5, 4)]
         camp = Camp.RED
         p1 = Bing(camp, 6, 6)
         p2 = Bing(camp, 6, 4)
         p3 = Bing(camp, 6, 2)
         situation = [p1, p2, p3]
         board = Board(situation)
-        expected_p = [p3, p2, p1, p3, p2]
+        expected_p = [p3, p2, p1, p3, p2, p2]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
             force, action, act_param, piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)

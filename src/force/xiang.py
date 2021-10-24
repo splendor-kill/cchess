@@ -6,13 +6,6 @@ class Xiang(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.XIANG, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-        pos = self.get_valid_pos(board_)
-        return (col, row) in pos
-
     def traverse(self, col):
         raise ValueError('cannot do this')
 
@@ -49,14 +42,15 @@ class Xiang(Piece):
                 continue
             p = board_.piece_at(col, row)
             if p is None or p.camp != self.camp:
-                poses.append((col, row))
+                if not self.will_cause_shuai_meet(board_, col, row):
+                    poses.append((col, row))
         return poses
 
 
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
     from piece import Camp
-
+    from force.shuai import Shuai
     col, row = 6, 9
     camp = Camp.RED
     from constants import FULL_BOARD
@@ -75,7 +69,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
     for c, r in valid:
         p = Xiang(camp.opponent(), c, r)
         situation.append(p)

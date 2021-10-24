@@ -7,10 +7,10 @@ from piece import Camp, Force
 
 class JuTest(unittest.TestCase):
     def test_can_move1(self):
-        col, row = 4, 6
+        col, row = 3, 6
         camp = Camp.RED
         p = Ju(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -24,7 +24,7 @@ class JuTest(unittest.TestCase):
         col, row = 4, 6
         camp = Camp.BLACK
         p = Ju(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -101,13 +101,27 @@ class JuTest(unittest.TestCase):
         self.assertEqual(6, len(valid))
         self.assertSetEqual({(5, 7), (5, 6), (5, 5), (6, 8), (7, 8), (8, 8)}, set(valid))
 
+    def test_can_move7(self):
+        col, row = 4, 6
+        camp = Camp.RED
+        p = Ju(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(8, len(valid))
+
 
 class MaTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 4, 6
         camp = Camp.RED
         p = Ma(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -203,13 +217,27 @@ class MaTest(unittest.TestCase):
         self.assertEqual(2, len(valid))
         self.assertSetEqual({(6, 2), (7, 1)}, set(valid))
 
+    def test_can_move7(self):
+        col, row = 4, 6
+        camp = Camp.RED
+        p = Ma(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(0, len(valid))
+
 
 class XiangTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 4, 7
         camp = Camp.RED
         p = Xiang(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -309,13 +337,27 @@ class XiangTest(unittest.TestCase):
         self.assertEqual(2, len(valid))
         self.assertSetEqual({(6, 5), (6, 9)}, set(valid))
 
+    def test_can_move7(self):
+        col, row = 4, 7
+        camp = Camp.RED
+        p = Xiang(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(0, len(valid))
+
 
 class ShiTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 3, 9
         camp = Camp.RED
         p = Shi(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -330,7 +372,7 @@ class ShiTest(unittest.TestCase):
         col, row = 4, 1
         camp = Camp.BLACK
         p = Shi(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -338,8 +380,8 @@ class ShiTest(unittest.TestCase):
                 yes = p.can_move(board, c, r)
                 if yes:
                     valid.append((c, r))
-        self.assertEqual(4, len(valid))
-        self.assertSetEqual({(3, 0), (5, 0), (3, 2), (5, 2)}, set(valid))
+        self.assertEqual(3, len(valid))
+        self.assertSetEqual({(5, 0), (3, 2), (5, 2)}, set(valid))
 
     def test_can_move3(self):
         col, row = 5, 9
@@ -363,7 +405,7 @@ class ShiTest(unittest.TestCase):
         col, row = 4, 8
         camp = Camp.RED
         p = Shi(camp, col, row)
-        situation = [p, Pao(Camp.RED, 5, 7), Pao(Camp.BLACK, 5, 9), Shuai(Camp.RED, 4, 9)]
+        situation = [p, Pao(Camp.RED, 5, 7), Pao(Camp.BLACK, 5, 9), Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0)]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -374,13 +416,27 @@ class ShiTest(unittest.TestCase):
         self.assertEqual(3, len(valid))
         self.assertSetEqual({(3, 7), (3, 9), (5, 9)}, set(valid))
 
+    def test_can_move5(self):
+        col, row = 4, 8
+        camp = Camp.RED
+        p = Shi(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(0, len(valid))
+
 
 class ShuaiTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 4, 9
         camp = Camp.RED
         p = Shuai(camp, col, row)
-        situation = [p, Shuai(Camp.BLACK, 0, 4), Bing(Camp.BLACK, 3, 4)]
+        situation = [p, Shuai(Camp.BLACK, 3, 0), Bing(Camp.RED, 3, 4)]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -427,13 +483,28 @@ class ShuaiTest(unittest.TestCase):
                     valid.append((c, r))
         self.assertEqual(0, len(valid))
 
+    def test_can_move4(self):
+        col, row = 3, 9
+        camp = Camp.RED
+        p = Shuai(camp, col, row)
+        situation = [p, Shuai(Camp.BLACK, 4, 0), Bing(Camp.RED, 3, 4)]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(1, len(valid))
+        self.assertSetEqual({(3, 8)}, set(valid))
+
 
 class PaoTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 4, 6
         camp = Camp.RED
         p = Pao(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -441,13 +512,13 @@ class PaoTest(unittest.TestCase):
                 yes = p.can_move(board, c, r)
                 if yes:
                     valid.append((c, r))
-        self.assertEqual(17, len(valid))
+        self.assertEqual(16, len(valid))
 
     def test_can_move2(self):
         col, row = 4, 6
         camp = Camp.BLACK
         p = Pao(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -455,7 +526,7 @@ class PaoTest(unittest.TestCase):
                 yes = p.can_move(board, c, r)
                 if yes:
                     valid.append((c, r))
-        self.assertEqual(17, len(valid))
+        self.assertEqual(16, len(valid))
 
     def test_can_move3(self):
         col, row = 7, 7
@@ -547,13 +618,27 @@ class PaoTest(unittest.TestCase):
         self.assertEqual(5, len(valid))
         self.assertSetEqual({(3, 5), (4, 4), (4, 6), (4, 8), (6, 5)}, set(valid))
 
+    def test_can_move7(self):
+        col, row = 4, 7
+        camp = Camp.BLACK
+        p = Pao(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(7, len(valid))
+
 
 class BingTest(unittest.TestCase):
     def test_can_move1(self):
         col, row = 4, 6
         camp = Camp.RED
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -568,7 +653,7 @@ class BingTest(unittest.TestCase):
         col, row = 4, 4
         camp = Camp.RED
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -583,7 +668,7 @@ class BingTest(unittest.TestCase):
         col, row = 0, 6
         camp = Camp.RED
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -598,7 +683,7 @@ class BingTest(unittest.TestCase):
         col, row = 0, 4
         camp = Camp.RED
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -613,7 +698,7 @@ class BingTest(unittest.TestCase):
         col, row = 8, 0
         camp = Camp.RED
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -628,7 +713,7 @@ class BingTest(unittest.TestCase):
         col, row = 4, 6
         camp = Camp.BLACK
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -643,7 +728,7 @@ class BingTest(unittest.TestCase):
         col, row = 4, 4
         camp = Camp.BLACK
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -658,7 +743,7 @@ class BingTest(unittest.TestCase):
         col, row = 0, 6
         camp = Camp.BLACK
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -673,7 +758,7 @@ class BingTest(unittest.TestCase):
         col, row = 0, 4
         camp = Camp.BLACK
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -688,7 +773,7 @@ class BingTest(unittest.TestCase):
         col, row = 4, 9
         camp = Camp.BLACK
         p = Bing(camp, col, row)
-        situation = [p]
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         valid = []
         for c in range(N_COLS):
@@ -699,6 +784,21 @@ class BingTest(unittest.TestCase):
         self.assertEqual(2, len(valid))
         self.assertSetEqual({(3, 9), (5, 9)}, set(valid))
 
+    def test_can_move11(self):
+        col, row = 4, 4
+        camp = Camp.RED
+        p = Bing(camp, col, row)
+        situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 4, 0), p]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(1, len(valid))
+        self.assertSetEqual({(4, 3)}, set(valid))
+
 
 if __name__ == '__main__':
-    unittest.main(verbosity=2)
+    unittest.main()

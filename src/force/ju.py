@@ -6,14 +6,6 @@ class Ju(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.JU, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-
-        pos = self.get_valid_pos(board_)
-        return (col, row) in pos
-
     def traverse(self, col):
         col, _ = self.with_my_view(col, None)
         assert self.col != col
@@ -47,6 +39,8 @@ class Ju(Piece):
                 break
             pos.append((self.col, r))
         for c in range(self.col + 1, N_COLS):  # to right
+            if self.will_cause_shuai_meet(board_, c, self.row):
+                continue
             p = board_.piece_at(c, self.row)
             if p is not None:
                 if p.camp != self.camp:
@@ -54,6 +48,8 @@ class Ju(Piece):
                 break
             pos.append((c, self.row))
         for c in range(self.col - 1, -1, -1):  # to left
+            if self.will_cause_shuai_meet(board_, c, self.row):
+                continue
             p = board_.piece_at(c, self.row)
             if p is not None:
                 if p.camp != self.camp:
@@ -66,6 +62,7 @@ class Ju(Piece):
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
     from piece import Camp
+    from force.shuai import Shuai
     col, row = 4, 1
     camp = Camp.RED
     from constants import well_known_3
@@ -81,7 +78,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
     for c, r in valid:
         p = Ju(camp.opponent(), c, r)
         situation.append(p)

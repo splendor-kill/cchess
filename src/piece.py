@@ -94,8 +94,12 @@ class Piece:
         c = appear + c + ENDC
         return c
 
-    def can_move(self, board_, action, act_param):
-        return False
+    def can_move(self, board_, col, row):
+        from board import N_COLS, N_ROWS
+        assert 0 <= col < N_COLS
+        assert 0 <= row < N_ROWS
+        pos = self.get_valid_pos(board_)
+        return (col, row) in pos
 
     def calc_dst(self, action, act_param):
         """get the dst position
@@ -112,7 +116,7 @@ class Piece:
         col, row = fn(act_param)
         return col, row
 
-    def get_legal_moves(self):
+    def get_valid_pos(self, board_):
         pass
 
     def traverse(self, col):
@@ -143,3 +147,14 @@ class Piece:
             raise ValueError('dst pos nonempty')
         self.col = col
         self.row = row
+
+    def will_cause_shuai_meet(self, board_, action_col, action_row):
+        shuai1 = board_.get_shuai(self.camp)
+        shuai2 = board_.get_shuai(self.camp.opponent())
+        assert shuai1 is not None
+        assert shuai2 is not None
+        if shuai1.col != shuai2.col:
+            return False
+        if shuai1.col == action_col:
+            return False
+        return board_.check_if_shuai_meet((shuai1.col, shuai1.row), (shuai2.col, shuai2.row), ignore_piece=self)

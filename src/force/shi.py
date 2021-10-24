@@ -6,14 +6,6 @@ class Shi(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.SHI, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-
-        pos = self.get_valid_pos(board_)
-        return (col, row) in pos
-
     def traverse(self, col):
         raise ValueError('cannot do this')
 
@@ -51,12 +43,14 @@ class Shi(Piece):
         for c, r in test_pos:
             p = board_.piece_at(c, r)
             if p is None or p.camp != self.camp:
-                pos.append((c, r))
+                if not self.will_cause_shuai_meet(board_, c, r):
+                    pos.append((c, r))
         return pos
 
 
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
+    from force.shuai import Shuai
     col, row = 3, 9
     camp = Camp.RED
     from constants import FULL_BOARD
@@ -72,7 +66,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
     for c, r in valid:
         p = Shi(camp.opponent(), c, r)
         situation.append(p)

@@ -6,14 +6,6 @@ class Pao(Piece):
     def __init__(self, camp, col, row):
         super().__init__(camp, Force.PAO, col, row)
 
-    def can_move(self, board_, col, row):
-        from board import N_COLS, N_ROWS
-        assert 0 <= col < N_COLS
-        assert 0 <= row < N_ROWS
-
-        pos = self.get_valid_pos(board_)
-        return (col, row) in pos
-
     def traverse(self, col):
         col, _ = self.with_my_view(col, None)
         assert self.col != col
@@ -48,6 +40,8 @@ class Pao(Piece):
             bed = False
             for x in line:
                 c, r = op(self, x)
+                if self.will_cause_shuai_meet(board_, c, r):
+                    continue
                 p = board_.piece_at(c, r)
                 if not bed:
                     if p is None:
@@ -68,6 +62,7 @@ class Pao(Piece):
 def test_can_move():
     from board import Board, N_COLS, N_ROWS
     from piece import Camp
+    from force.shuai import Shuai
 
     col, row = 4, 5
     camp = Camp.BLACK
@@ -85,7 +80,7 @@ def test_can_move():
             if yes:
                 valid.append((c, r))
     print((col, row), valid)
-    situation = [p]
+    situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
     for c, r in valid:
         p = Pao(camp.opponent(), c, r)
         situation.append(p)
