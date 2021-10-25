@@ -8,17 +8,26 @@ from piece import *
 N_ROWS = 10  # term: rank
 N_COLS = 9  # term: file
 
+REWARD_WIN = 1
+REWARD_LOSE = -1
+REWARD_DRAW = 0
+REWARD_ILLEGAL = -5  # illegal action
+
 
 class Action(IntEnum):
     ADVANCE = 1
     RETREAT = 2
     TRAVERSE = 3
+    SUE_DRAW = 4
+    RESIGN = 5
 
 
 ACTION_ALIAS = {
     Action.ADVANCE: '进',
     Action.RETREAT: '退',
-    Action.TRAVERSE: '平'
+    Action.TRAVERSE: '平',
+    Action.SUE_DRAW: '求和',
+    Action.RESIGN: '认输',
 }
 ACTION_ALIAS_INV = {v: k for k, v in ACTION_ALIAS.items()}
 
@@ -90,7 +99,14 @@ class Board:
         return plane
 
     def get_valid_actions(self, camp):
-        pass
+        valid_actions = []
+        for p in self.situation:
+            if p.camp != camp:
+                continue
+            poses = p.get_valid_pos(self)
+            for pos in poses:
+                valid_actions.append({'piece': p, 'dst': pos})
+        return valid_actions
 
     def piece_at(self, col, row):
         for p in self.situation:
@@ -180,24 +196,33 @@ class Board:
             return pieces[4]
 
     def make_move(self, piece, dst):
-        piece_at_dst = None
-        for p in self.situation:
-            if p.col == dst[0] and p.row == dst[1]:
-                piece_at_dst = p
-                break
+        """
+
+        :param piece:
+        :param dst:
+        :return: if capture enemy Shuai
+        """
+        piece_at_dst = self.piece_at(*dst)
+        if not piece.can_move(self, *dst):
+            raise ValueError('cannot do this')
 
         if piece_at_dst is None:  # just move
             piece.col = dst[0]
             piece.row = dst[1]
         else:
             if piece_at_dst.camp != piece.camp:
-                # TODO check if can move by rule
                 self.situation.remove(piece_at_dst)
                 print(f'capture the piece {piece_at_dst}')
                 piece.col = dst[0]
                 piece.row = dst[1]
+                if piece_at_dst.force == Force.SHUAI:
+                    return True
             else:
                 raise ValueError('illegal move')
+        enemy_shuai = self.get_shuai(piece.camp.opponent())
+        if (enemy_shuai.col, enemy_shuai.row) in piece.get_valid_pos(self):
+            display_check()
+        return False
 
     def check_if_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
         col1, row1 = shuai1_pos
@@ -211,6 +236,9 @@ class Board:
                 return False
         return True
 
+    def check_if_draw(self):
+        pass
+
 
 def parse_action(cmd: str, camp: Camp, board: Board):
     """中式记法，参考 https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B
@@ -222,6 +250,11 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     """
 
     cmd = cmd.strip()
+    if cmd == Action.SUE_DRAW.value:
+        return None, Action.SUE_DRAW, None, None, None
+    if cmd == Action.RESIGN.value:
+        return None, Action.RESIGN, None, None, None
+
     if len(cmd) == 3:
         if cmd[-1] in {ACTION_ALIAS[Action.ADVANCE], ACTION_ALIAS[Action.RETREAT]}:  # 处理如“兵七进”
             cmd = cmd + '1'

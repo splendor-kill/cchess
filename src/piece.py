@@ -4,14 +4,20 @@ from enum import IntEnum
 APPEAR_BLACK = ''
 APPEAR_RED = ''
 ENDC = ''
+APPEAR_CHECK = ''
 
 if os.name == 'posix':
     APPEAR_BLACK = '\033[1;30;47m'
     APPEAR_RED = '\033[1;31;47m'
     ENDC = '\033[0m'
+    APPEAR_CHECK = '\033[1;33;41m'
 
 PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
 PLACE_CHARS = '＋Ｘ'
+
+
+def display_check():
+    print(APPEAR_CHECK + '将！！！' + ENDC)
 
 
 class Camp(IntEnum):

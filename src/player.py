@@ -1,4 +1,4 @@
-from piece import Camp, Force, piece_2_char
+from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator
 
 
@@ -6,6 +6,10 @@ class Player:
     def __init__(self, id_):
         self._id_ = id_
         self._env = None
+
+    @property
+    def id(self):
+        return self._id_
 
     @property
     def env(self):
@@ -27,19 +31,25 @@ class Human(Player):
         valid_actions = kwargs['valid_actions']
         camp = kwargs['next_player']
         board = kwargs['board']
+        if len(valid_actions) == 0:
+            return {'action': Action.RESIGN}
+        oppo_sue_draw = kwargs['sue_draw']
 
         while True:
-            directive = input('what do you want? ')
-            print(directive)
+            appear = APPEAR_RED if self.env.cur_player == Camp.RED else APPEAR_BLACK
+            you = appear + 'You' + ENDC
+            hint = f'opponent sue for peace, do {you} agree? ' if oppo_sue_draw else f'what do {you} want? '
+            directive = input(hint)
 
             try:
-                action = self.flex_action_input(directive, camp, board)
+                action = self.flex_action_input(directive, camp, board,
+                                                sue_draw=oppo_sue_draw, valid_actions=valid_actions)
                 return action
             except Exception as e:
-                print(e)
+                print(f'{e}, try again')
 
     @staticmethod
-    def flex_action_input(directive: str, camp, board):
+    def flex_action_input(directive: str, camp, board, **kwargs):
         pinyin = {
             'ju': piece_2_char(Camp.RED, Force.JU),
             'ma': piece_2_char(Camp.RED, Force.MA),
@@ -56,6 +66,8 @@ class Human(Player):
             '+': ACTION_ALIAS[Action.ADVANCE],
             'tui': ACTION_ALIAS[Action.RETREAT],
             '-': ACTION_ALIAS[Action.RETREAT],
+            'he': ACTION_ALIAS[Action.SUE_DRAW],
+            'shu': ACTION_ALIAS[Action.RESIGN],
             'qian': ROW_INDICATOR_ALIAS[RowIndicator.FRONT],
             'zhong': ROW_INDICATOR_ALIAS[RowIndicator.MID],
             'hou': ROW_INDICATOR_ALIAS[RowIndicator.REAR],
@@ -72,11 +84,16 @@ class Human(Player):
             'fifth': ROW_INDICATOR_ALIAS[RowIndicator.FIFTH],
         }
         directive = directive.lower()
+        if kwargs['sue_draw']:
+            agree = directive.strip() == 'yes'
+            return {'action': Action.SUE_DRAW, 'act_param': agree}
         for k, v in pinyin.items():
             directive = directive.replace(k, v)
         directive = directive.replace(' ', '')
         force, action, act_param, piece, dst = parse_action(directive, camp, board)
-        print(force, action, act_param, piece, dst)
+        # print(force, action, act_param, piece, dst)
+        if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
+            raise ValueError('illegal move')
         return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
 
 

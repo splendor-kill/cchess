@@ -4,7 +4,7 @@ from piece import Camp
 
 
 def play_a_game():
-    players = {Camp.RED: Human(Camp.RED.value), Camp.BLACK: Human(Camp.BLACK.value)}
+    players = {Camp.RED: Human(Camp.RED), Camp.BLACK: Human(Camp.BLACK)}
     env = Env()
     for p in players.values():
         p.env = env
@@ -16,6 +16,7 @@ def play_a_game():
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:
+            print(f'player {player.id.name}, reward: {reward}')
             break
     print('game over.')
 
