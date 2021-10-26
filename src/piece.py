@@ -123,16 +123,16 @@ class Piece:
         return col, row
 
     def get_valid_pos(self, board_):
-        pass
+        raise NotImplementedError('left to subclass')
 
     def traverse(self, col):
-        pass
+        raise NotImplementedError('left to subclass')
 
     def advance(self, d):
-        pass
+        raise NotImplementedError('left to subclass')
 
     def retreat(self, d):
-        pass
+        raise NotImplementedError('left to subclass')
 
     def to_abs_col(self, col):
         from board import N_COLS
@@ -163,4 +163,4 @@ class Piece:
             return False
         if shuai1.col == action_col:
             return False
-        return board_.check_if_shuai_meet((shuai1.col, shuai1.row), (shuai2.col, shuai2.row), ignore_piece=self)
+        return board_.test_shuai_meet((shuai1.col, shuai1.row), (shuai2.col, shuai2.row), ignore_piece=self)

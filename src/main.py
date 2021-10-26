@@ -1,10 +1,10 @@
-from player import Human, NoBrain
 from env import Env
 from piece import Camp
+from player import Human, NoBrain
 
 
 def play_a_game():
-    players = {Camp.RED: Human(Camp.RED), Camp.BLACK: Human(Camp.BLACK)}
+    players = {Camp.RED: Human(Camp.RED), Camp.BLACK: NoBrain(Camp.BLACK)}
     env = Env()
     for p in players.values():
         p.env = env

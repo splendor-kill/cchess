@@ -18,7 +18,7 @@ class Env:
 
     def _make_observation(self):
         state = self.board.observe()
-        valid_actions = self.board.get_valid_actions(self.cur_player)
+        valid_actions = self.board.get_final_valid_actions(self.cur_player)
         ob = {'next_player': self.cur_player,
               'board_state': state,
               'valid_actions': valid_actions,
@@ -60,7 +60,7 @@ class Env:
             print(e)
             return None, REWARD_LOSE, True, None
 
-        done = self.board.check_if_draw()
+        done = self.board.test_draw()
         if done:
             return None, REWARD_DRAW, True, None
 

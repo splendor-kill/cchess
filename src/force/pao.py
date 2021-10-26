@@ -55,7 +55,6 @@ class Pao(Piece):
                     if p.camp != self.camp:
                         poses.append((c, r))
                     break
-                poses.append((c, r))
         return poses
 
 

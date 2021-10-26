@@ -1,5 +1,5 @@
-from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator
+from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 
 
 class Player:
@@ -97,9 +97,39 @@ class Human(Player):
         return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
 
 
+def infer_action_and_param(piece, dst):
+    param_must_be_col = {Force.MA, Force.XIANG, Force.SHI}
+    col, row = piece.with_my_view()
+    dst_col, dst_row = piece.with_my_view(*dst)
+    if dst_row == row:
+        return Action.TRAVERSE, dst_col
+    if dst_row < row:
+        if piece.force in param_must_be_col:
+            return Action.RETREAT, dst_col
+        return Action.RETREAT, row - dst_row
+    if dst_row > row:
+        if piece.force in param_must_be_col:
+            return Action.RETREAT, dst_col
+        return Action.ADVANCE, dst_row - row
+
+
 class NoBrain(Player):
     def __init__(self, id_):
         super().__init__(id_)
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
+        if len(valid_actions) == 0:
+            return {'action': Action.RESIGN}
+        if kwargs['sue_draw']:
+            return {'action': Action.SUE_DRAW, 'act_param': True}
+        import random
+        action = random.choice(valid_actions)
+        piece = action['piece']
+        dst = action['dst']
+        act, param = infer_action_and_param(piece, dst)
+        action['action'] = act
+        action['act_param'] = param
+
+        print(f'{piece}{piece.col}{ACTION_ALIAS[act]}{param}')
+        return action

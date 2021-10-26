@@ -547,26 +547,6 @@ class PaoTest(unittest.TestCase):
             {(2, 7), (3, 7), (4, 7), (5, 7), (6, 7), (7, 0), (7, 3), (7, 4), (7, 5), (7, 6), (7, 8), (8, 7)},
             set(valid))
 
-    def test_can_move31(self):
-        col, row = 7, 7
-        camp = Camp.RED
-        from constants import FULL_BOARD
-        board = Board(FULL_BOARD)
-        p = board.piece_at(col, row)
-        self.assertEqual(p.camp, camp)
-        self.assertEqual(p.force, Force.PAO)
-        p.move_to(board, 4, 7)
-        valid = []
-        for c in range(N_COLS):
-            for r in range(N_ROWS):
-                yes = p.can_move(board, c, r)
-                if yes:
-                    valid.append((c, r))
-        self.assertEqual(8, len(valid))
-        self.assertSetEqual(
-            {(2, 7), (3, 7), (4, 3), (4, 8), (5, 7), (6, 7), (7, 7), (8, 7)},
-            set(valid))
-
     def test_can_move4(self):
         col, row = 5, 8
         camp = Camp.BLACK
@@ -631,6 +611,43 @@ class PaoTest(unittest.TestCase):
                 if yes:
                     valid.append((c, r))
         self.assertEqual(7, len(valid))
+
+    def test_can_move8(self):
+        col, row = 7, 7
+        camp = Camp.RED
+        from constants import FULL_BOARD
+        board = Board(FULL_BOARD)
+        p = board.piece_at(col, row)
+        self.assertEqual(p.camp, camp)
+        self.assertEqual(p.force, Force.PAO)
+        p.move_to(board, 4, 7)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(8, len(valid))
+        self.assertSetEqual(
+            {(2, 7), (3, 7), (4, 3), (4, 8), (5, 7), (6, 7), (7, 7), (8, 7)},
+            set(valid))
+
+    def test_can_move9(self):
+        rshuai = Shuai(Camp.RED, 4, 9)
+        rma = Ma(Camp.RED, 4, 4)
+        rpao = Pao(Camp.RED, 4, 7)
+        bshuai = Shuai(Camp.BLACK, 4, 0)
+        bshi = Shi(Camp.BLACK, 4, 1)
+        bju = Ju(Camp.BLACK, 1, 9)
+        situation = [rshuai, rma, rpao, bshuai, bshi, bju]
+        board = Board(situation)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = rpao.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(12, len(valid))
 
 
 class BingTest(unittest.TestCase):

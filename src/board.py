@@ -82,6 +82,7 @@ class Board:
             situation = self._parse(situation)
         self.situation = situation
         assert isinstance(self.situation, list)
+        self.checked = {Camp.RED: False, Camp.BLACK: False}
 
     def __str__(self):
         sit = {f'p{i}{j}': PLACE_CHARS[0] for i in range(N_ROWS) for j in range(N_ROWS)}
@@ -108,14 +109,48 @@ class Board:
                 valid_actions.append({'piece': p, 'dst': pos})
         return valid_actions
 
+    def get_final_valid_actions(self, camp):
+        valid_actions = self.get_valid_actions(camp)
+        real_actions = []
+        for a in valid_actions:
+            bak_pos, dst_p, dst_p_idx = None, None, None
+            try:
+                bak_pos, dst_p, dst_p_idx = self.virtual_move(a['piece'], a['dst'])
+                if not self.test_check(camp.opponent()):
+                    real_actions.append(a)
+            finally:
+                self.undo_virtual_move(a['piece'], bak_pos, dst_p, dst_p_idx)
+        return real_actions
+
+    def virtual_move(self, piece, dst):
+        piece_at_dst = self.piece_at(*dst)
+        if piece_at_dst is None:
+            bak_pos = (piece.col, piece.row)
+            piece.col = dst[0]
+            piece.row = dst[1]
+            return bak_pos, None, None
+        else:
+            if piece_at_dst.camp != piece.camp:
+                bak_pos = (piece.col, piece.row)
+                bak_idx = self.situation.index(piece_at_dst)
+                self.situation.remove(piece_at_dst)
+                piece.col = dst[0]
+                piece.row = dst[1]
+                return bak_pos, piece_at_dst, bak_idx
+        return None, None, None
+
+    def undo_virtual_move(self, bak_piece, bak_pos, removed_piece, removed_piece_idx):
+        if removed_piece is not None and removed_piece_idx is not None:
+            self.situation.insert(removed_piece_idx, removed_piece)
+        if bak_pos is not None:
+            bak_piece.col = bak_pos[0]
+            bak_piece.row = bak_pos[1]
+
     def piece_at(self, col, row):
         for p in self.situation:
             if p.col == col and p.row == row:
                 return p
         return None
-
-    def remove(self, c, r):
-        pass
 
     def throw_away(self, piece):
         if piece in self.situation:
@@ -172,7 +207,7 @@ class Board:
             return pieces[0]
 
         rev = camp == Camp.BLACK
-        pieces.sort(key=lambda p: p.row, reverse=rev)
+        pieces.sort(key=lambda x: x.row, reverse=rev)
         if row_indicator == RowIndicator.FRONT:
             assert n_pieces > 1
             return pieces[0]
@@ -219,12 +254,14 @@ class Board:
                     return True
             else:
                 raise ValueError('illegal move')
-        enemy_shuai = self.get_shuai(piece.camp.opponent())
-        if (enemy_shuai.col, enemy_shuai.row) in piece.get_valid_pos(self):
+        if self.test_check(piece.camp):
+            self.checked[piece.camp.opponent()] = True
             display_check()
+        if self.checked[piece.camp] and not self.test_check(piece.camp.opponent()):
+            self.checked[piece.camp] = False
         return False
 
-    def check_if_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
+    def test_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
         col1, row1 = shuai1_pos
         col2, row2 = shuai2_pos
         if col1 != col2:
@@ -236,8 +273,17 @@ class Board:
                 return False
         return True
 
-    def check_if_draw(self):
-        pass
+    def test_draw(self):
+        # TODO
+        return False
+
+    def test_check(self, attacker):
+        enemy_shuai = self.get_shuai(attacker.opponent())
+        valid_actions = self.get_valid_actions(attacker)
+        for act in valid_actions:
+            if (enemy_shuai.col, enemy_shuai.row) == act['dst']:
+                return True
+        return False
 
 
 def parse_action(cmd: str, camp: Camp, board: Board):
@@ -307,12 +353,12 @@ def parse_action(cmd: str, camp: Camp, board: Board):
         raise ValueError('invalid action param')
     act_param = COL_ALIAS_INV[act_param]
     param_must_be_col = {(Force.JU, Action.TRAVERSE),
-                         (Force.MA, Action.ADVANCE), (Force.MA, Action.RETREAT),
-                         (Force.XIANG, Action.ADVANCE), (Force.XIANG, Action.RETREAT),
-                         (Force.SHI, Action.ADVANCE), (Force.SHI, Action.RETREAT),
-                         (Force.SHUAI, Action.TRAVERSE),
-                         (Force.PAO, Action.TRAVERSE),
-                         (Force.BING, Action.TRAVERSE)}
+                                (Force.MA, Action.ADVANCE), (Force.MA, Action.RETREAT),
+                                (Force.XIANG, Action.ADVANCE), (Force.XIANG, Action.RETREAT),
+                                (Force.SHI, Action.ADVANCE), (Force.SHI, Action.RETREAT),
+                                (Force.SHUAI, Action.TRAVERSE),
+                                (Force.PAO, Action.TRAVERSE),
+                                (Force.BING, Action.TRAVERSE)}
     if (piece.force, action) in param_must_be_col:
         act_param -= 1
 

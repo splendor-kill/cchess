@@ -51,7 +51,7 @@ class Shuai(Piece):
     def will_cause_shuai_meet(self, board_, col, row):
         enemy_shuai = board_.get_shuai(self.camp.opponent())
         assert enemy_shuai is not None
-        return board_.check_if_shuai_meet((enemy_shuai.col, enemy_shuai.row), (col, row))
+        return board_.test_shuai_meet((enemy_shuai.col, enemy_shuai.row), (col, row))
 
 
 def test_can_move():
