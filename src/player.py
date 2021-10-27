@@ -83,9 +83,9 @@ class Human(Player):
             'forth': ROW_INDICATOR_ALIAS[RowIndicator.FORTH],
             'fifth': ROW_INDICATOR_ALIAS[RowIndicator.FIFTH],
         }
-        directive = directive.lower()
+        directive = directive.strip().lower()
         if kwargs['sue_draw']:
-            agree = directive.strip() == 'yes'
+            agree = directive == 'yes'
             return {'action': Action.SUE_DRAW, 'act_param': agree}
         for k, v in pinyin.items():
             directive = directive.replace(k, v)
@@ -130,6 +130,5 @@ class NoBrain(Player):
         act, param = infer_action_and_param(piece, dst)
         action['action'] = act
         action['act_param'] = param
-
         print(f'{piece}{piece.col}{ACTION_ALIAS[act]}{param}')
         return action

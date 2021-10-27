@@ -231,6 +231,38 @@ class MaTest(unittest.TestCase):
                     valid.append((c, r))
         self.assertEqual(0, len(valid))
 
+    def test_can_move8(self):
+        situation = '''
+＋－＋－車－士－將－士－象－車－＋
+｜　｜　｜　｜＼｜／｜　｜　｜　｜
+＋－＋－＋－＋－＋－＋－＋－＋－＋
+｜　｜　｜　｜／｜＼｜　｜　｜　｜
+＋－砲－＋－＋－象－＋－馬－砲－＋
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+卒－＋－馬－＋－卒－＋－卒－＋－卒
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+＋－＋－卒－傌－＋－＋－＋－＋－＋
+＋－＋－＋－＋－＋－＋－兵－＋－＋
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+兵－＋－兵－＋－兵－＋－＋－＋－兵
+｜　｜　｜　｜　｜　｜　｜　｜　｜
+＋－＋－傌－炮－炮－＋－＋－＋－＋
+｜　｜　｜　｜＼｜／｜　｜　｜　｜
+＋－＋－＋－＋－＋－＋－＋－＋－＋
+｜　｜　｜　｜／｜＼｜　｜　｜　｜
+俥－＋－相－仕－帥－仕－相－俥－＋
+'''
+        board = Board(situation)
+        p = board.piece_at(2, 3)
+        self.assertTrue(p.force == Force.MA)
+        self.assertTrue(p.camp == Camp.BLACK)
+        valid = []
+        for c in range(N_COLS):
+            for r in range(N_ROWS):
+                yes = p.can_move(board, c, r)
+                if yes:
+                    valid.append((c, r))
+        self.assertEqual(5, len(valid))
 
 class XiangTest(unittest.TestCase):
     def test_can_move1(self):
