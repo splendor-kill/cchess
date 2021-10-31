@@ -92,7 +92,8 @@ class Human(Player):
         directive = directive.replace(' ', '')
         force, action, act_param, piece, dst = parse_action(directive, camp, board)
         # print(force, action, act_param, piece, dst)
-        if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
+        if action not in (Action.RESIGN, Action.SUE_DRAW) and \
+                {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
             raise ValueError('illegal move')
         return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
 

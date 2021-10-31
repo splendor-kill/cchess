@@ -1,6 +1,6 @@
 import unittest
 
-from board import Board, parse_action
+from board import Board, parse_action, Action
 from force import *
 from piece import Camp, Force
 
@@ -552,6 +552,37 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
+
+
+class SpecialActionTest(unittest.TestCase):
+    def test_parse_action_shu(self):
+        opening = '''
+        ＋－＋－＋－＋－＋－將－＋－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－俥－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－＋－＋－兵－兵－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－車－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－相－＋－＋－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－仕－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－＋－＋－帥－仕－＋－＋－＋
+        '''
+        board = Board(opening)
+        print(board)
+        camp = Camp.BLACK
+        cmd = '认输'
+        force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+        self.assertEqual(Action.RESIGN, action)
+
 
 
 if __name__ == '__main__':

@@ -296,9 +296,9 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     """
 
     cmd = cmd.strip()
-    if cmd == Action.SUE_DRAW.value:
+    if cmd == ACTION_ALIAS[Action.SUE_DRAW]:
         return None, Action.SUE_DRAW, None, None, None
-    if cmd == Action.RESIGN.value:
+    if cmd == ACTION_ALIAS[Action.RESIGN]:
         return None, Action.RESIGN, None, None, None
 
     if len(cmd) == 3:
