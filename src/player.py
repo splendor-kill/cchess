@@ -24,7 +24,7 @@ class Player:
 
 
 class Human(Player):
-    def __init__(self, id_, **kwargs):
+    def __init__(self, id_):
         super().__init__(id_)
 
     def make_decision(self, **kwargs):

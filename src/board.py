@@ -353,12 +353,12 @@ def parse_action(cmd: str, camp: Camp, board: Board):
         raise ValueError('invalid action param')
     act_param = COL_ALIAS_INV[act_param]
     param_must_be_col = {(Force.JU, Action.TRAVERSE),
-                                (Force.MA, Action.ADVANCE), (Force.MA, Action.RETREAT),
-                                (Force.XIANG, Action.ADVANCE), (Force.XIANG, Action.RETREAT),
-                                (Force.SHI, Action.ADVANCE), (Force.SHI, Action.RETREAT),
-                                (Force.SHUAI, Action.TRAVERSE),
-                                (Force.PAO, Action.TRAVERSE),
-                                (Force.BING, Action.TRAVERSE)}
+                         (Force.MA, Action.ADVANCE), (Force.MA, Action.RETREAT),
+                         (Force.XIANG, Action.ADVANCE), (Force.XIANG, Action.RETREAT),
+                         (Force.SHI, Action.ADVANCE), (Force.SHI, Action.RETREAT),
+                         (Force.SHUAI, Action.TRAVERSE),
+                         (Force.PAO, Action.TRAVERSE),
+                         (Force.BING, Action.TRAVERSE)}
     if (piece.force, action) in param_must_be_col:
         act_param -= 1
 
