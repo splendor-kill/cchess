@@ -115,9 +115,9 @@ class Piece:
         :return: (col, row), in board coordinate system
         """
         from board import Action
-        d_fn = {Action.TRAVERSE: self.traverse,
-                Action.ADVANCE: self.advance,
-                Action.RETREAT: self.retreat}
+        d_fn = {Action.TRAVERSE: lambda x: self.traverse(x),
+                Action.ADVANCE: lambda x: self.advance(x),
+                Action.RETREAT: lambda x: self.retreat(x)}
         fn = d_fn[action]
         col, row = fn(act_param)
         return col, row
