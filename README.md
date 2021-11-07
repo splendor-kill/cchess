@@ -18,6 +18,12 @@
 
 - [ ] pipeline
 
+  - [ ] contribute
+  - [ ] match
+  - [ ] self-play
+  - [ ] analysis
+  - [ ] commucation protocol
+
 - [ ] model
 
 - [ ] MCTS
@@ -28,7 +34,7 @@
   
 - [ ] src
 
-  - [ ] leela zero
+  - [x] leela zero
   - [ ] Stockfish
   - [ ] ELF OpenGo
   - [ ] KataGo
