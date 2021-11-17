@@ -1,1 +1,90 @@
 reword_of_illegal_action: -5
+
+opts:
+  new: False
+
+evaluate:
+  vram_frac: 1.0
+  game_num: 50
+  replace_rate: 0.55
+  play_config: PlayConfig()
+  play_config.simulation_num_per_move: 200
+  play_config.thinking_loop: 1
+  play_config.c_puct: 1 # lower : prefer mean action value
+  play_config.tau_decay_rate: 0.6 # I need a better distribution...
+  play_config.noise_eps: 0
+  evaluate_latest_first: True
+  max_game_length: 1000
+
+
+playdata:
+  min_elo_policy: 500 # 0 weight
+  max_elo_policy: 1800 # 1 weight
+  sl_nb_game_in_file: 250
+  nb_game_in_file: 50
+  max_file_num: 150
+
+
+play:
+  max_processes: 1
+  search_threads: 4
+  vram_frac: 1.0
+  simulation_num_per_move: 800
+  thinking_loop: 1
+  logging_thinking: False
+  c_puct: 1.5
+  noise_eps: 0.25
+  dirichlet_alpha: 0.3
+  tau_decay_rate: 0.99
+  virtual_loss: 3
+  resign_threshold: -0.8
+  min_resign_turn: 5
+  max_game_length: 1000
+
+
+trainer:
+  min_data_size_to_learn: 0
+  cleaning_processes: 5 # RAM explosion...
+  vram_frac: 1.0
+  batch_size: 384 # tune this to your gpu memory
+  epoch_to_checkpoint: 1
+  dataset_size: 100000
+  start_total_steps: 0
+  save_model_steps: 25
+  load_data_steps: 100
+  loss_weights: [ 1.25, 1.0 ] # [policy, value] prevent value overfit in SL
+
+
+model:
+  cnn_filter_num: 256
+  cnn_first_filter_size: 5
+  cnn_filter_size: 3
+  res_layer_num: 7
+  l2_reg: 1e-4
+  value_fc_size: 256
+  distributed: True
+  input_depth: 18
+
+
+resource:
+  project_dir: "./"
+  data_dir: "./data"
+  model_dir: "./data/model"
+  model_best_config_path: "./data/model/model_best_config.json"
+  model_best_weight_path: "./data/model/model_best_weight.h5"
+
+  model_best_distributed_ftp_server: "alpha-chess-zero.mygamesonline.org"
+  model_best_distributed_ftp_user: "2537576_chess"
+  model_best_distributed_ftp_password: "alpha-chess-zero-2"
+  model_best_distributed_ftp_remote_path: "/alpha-chess-zero.mygamesonline.org/"
+
+  next_generation_model_dir: "./data/model/next_generation"
+  next_generation_model_dirname_tmpl: "model_%s"
+  next_generation_model_config_filename: "model_config.json"
+  next_generation_model_weight_filename: "model_weight.h5"
+
+  play_data_dir: "./data/play_data"
+  play_data_filename_tmpl: "play_%s.json"
+
+  log_dir: "./logs"
+  main_log_path: "./logs/main.log"

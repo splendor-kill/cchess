@@ -1,6 +1,9 @@
 from env import Env
 from piece import Camp
 from player import Human, NoBrain
+from common.utils import load_cfg
+from config import cfg
+import multiprocessing as mp
 
 
 def play_a_game(opening=None):
@@ -27,9 +30,14 @@ if __name__ == '__main__':
     import sys
     import time
     import argparse
+    import warnings
+
+    warnings.simplefilter(action='ignore', category=FutureWarning)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument('config', type=str, default='config.yaml')
     parser.add_argument('--human_color', default='red', choices=['red', 'black'], type=str)
+    parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval'])
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -38,8 +46,19 @@ if __name__ == '__main__':
         stream=sys.stderr,
 
     )
+
+    mp.set_start_method('spawn')
+    sys.setrecursionlimit(10000)
+
+    cfg.update(load_cfg(args.config))
     # np.random.seed(0)
     s = time.perf_counter()
+
+    if args.cmd == 'self':
+        from worker import self_play
+
+        self_play.start(cfg)
+        sys.exit(0)
 
     n = 1
     play_a_game()
