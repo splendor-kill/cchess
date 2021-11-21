@@ -24,7 +24,7 @@ moves: INT "." WSI+ move WSI+ move WS+ VAR? COMMENT?
 move: /.{4}/
 result_line: (INT "." WSI+ move WS+)? SCORE
 
-post: "="+ NL (/.+/ NL?)*
+post: "="+ NL (/[^\[]+/ NL?)*
 """
 
 pgn_parser = Lark(grammar, start='start')
