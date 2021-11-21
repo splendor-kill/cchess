@@ -59,7 +59,16 @@ if __name__ == '__main__':
 
         self_play.start(cfg)
         sys.exit(0)
+    elif args.cmd == 'opt':
+        from worker import optimize
 
+        optimize.start(cfg)
+        sys.exit(0)
+    elif args.cmd == 'eval':
+        from worker import evaluate
+
+        evaluate.start(cfg)
+        sys.exit(0)
     n = 1
     play_a_game()
 

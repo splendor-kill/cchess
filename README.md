@@ -8,11 +8,14 @@
   - [x] action 引起将帅碰面
   - [x] action 引起被将军
   - [ ] 结束条件（求和）
+  - [ ] UCCI
 
 - [ ] baseline
 
   - [ ] alpha-beta search
   - [ ] 监督学习
+    - [ ] [数据集](https://www.kaggle.com/boyofans/onlinexiangqi)
+    - [ ] [爬虫](xqbase.com)
 
 - [ ] benchmark
 
@@ -23,6 +26,7 @@
   - [ ] self-play
   - [ ] analysis
   - [ ] commucation protocol
+  - [ ] hyper params opt
 
 - [ ] model
 
@@ -36,8 +40,8 @@
 
   - [x] leela zero
   - [ ] Stockfish
-  - [ ] ELF OpenGo
-  - [ ] KataGo
+  - [x] ELF OpenGo
+  - [x] KataGo
 
   
 
@@ -75,10 +79,14 @@
 
 ### reference
 
-* [中式记法](https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B)
-* [西式记法](http://wxf.ca/xq/computer/wxf_notation.html)
+* [Xiangqi](https://en.wikipedia.org/wiki/Xiangqi)
+
+* [中式记法](https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B) [西式记法](http://wxf.ca/xq/computer/wxf_notation.html) [着法表示](https://www.xqbase.com/protocol/cchess_move.htm)
 
 * [术语](http://wxf.ca/xq/computer/XIANGQI_TERMS_IN_ENGLISH.pdf)
 
-  
+* [UCCI](https://www.xqbase.com/protocol/cchess_ucci.htm) [UCI](https://gist.github.com/aliostad/f4470274f39d29b788c1b09519e67372)
 
+* [Elo计算](https://www.xqbase.com/protocol/elostat.htm)
+
+  
