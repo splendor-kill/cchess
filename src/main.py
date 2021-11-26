@@ -1,6 +1,6 @@
 from env import Env
 from piece import Camp
-from player import Human, NoBrain
+from player import Human, NoBrain, Playbook
 from common.utils import load_cfg
 from config import cfg
 import multiprocessing as mp
@@ -9,6 +9,28 @@ import multiprocessing as mp
 def play_a_game(opening=None):
     players = {Camp.RED: Human(Camp.RED), Camp.BLACK: Human(Camp.BLACK)}
     env = Env(opening)
+    for p in players.values():
+        p.env = env
+
+    ob = env.reset()
+    while True:
+        env.render()
+        player = players[ob['next_player']]
+        action = player.make_decision(**ob)
+        ob, reward, done, info = env.step(action)
+        if done:
+            env.render()
+            print(f'player {player.id.name}, reward: {reward}')
+            break
+    print('game over.')
+
+
+def demo(pgn):
+    from common.pgn_parser import get_moves_and_result
+    moves, result = get_moves_and_result(pgn)
+
+    players = {Camp.RED: Playbook(Camp.RED, moves[::2]), Camp.BLACK: Playbook(Camp.BLACK, moves[1::2])}
+    env = Env()
     for p in players.values():
         p.env = env
 
@@ -37,7 +59,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, default='config.yaml')
     parser.add_argument('--human_color', default='red', choices=['red', 'black'], type=str)
-    parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval'])
+    parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval', 'demo'])
+    parser.add_argument('--pgn_file', help='demo by pgn')
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -69,6 +93,10 @@ if __name__ == '__main__':
 
         evaluate.start(cfg)
         sys.exit(0)
+    elif args.cmd == 'demo':
+        demo(args.pgn_file)
+        sys.exit(0)
+
     n = 1
     play_a_game()
 

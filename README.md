@@ -14,7 +14,7 @@
 
   - [ ] alpha-beta search
   - [ ] 监督学习
-    - [ ] [数据集](https://www.kaggle.com/boyofans/onlinexiangqi)
+    - [x] [数据集](https://www.kaggle.com/boyofans/onlinexiangqi)
     - [ ] [爬虫](xqbase.com)
 
 - [ ] benchmark
@@ -89,4 +89,7 @@
 
 * [Elo计算](https://www.xqbase.com/protocol/elostat.htm)
 
+* [源码](https://github.com/Zeta36/chess-alpha-zero.git)
+
   
+

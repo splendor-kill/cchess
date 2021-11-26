@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 from logging import getLogger
+from board import N_ROWS, N_COLS
 
 from keras.engine.topology import Input
 from keras.engine.training import Model
@@ -49,7 +50,7 @@ class NNModel:
         Builds the full Keras model and stores it in self.model.
         """
         mc = self.config.model
-        in_x = x = Input((18, 8, 8))
+        in_x = x = Input((18, N_ROWS, N_COLS))
 
         # (batch, channels, height, width)
         x = Conv2D(filters=mc.cnn_filter_num, kernel_size=mc.cnn_first_filter_size, padding="same",

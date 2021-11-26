@@ -1,3 +1,5 @@
+import time
+
 from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator
 from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 
@@ -133,3 +135,34 @@ class NoBrain(Player):
         action['act_param'] = param
         print(f'{piece}{piece.col}{ACTION_ALIAS[act]}{param}')
         return action
+
+
+class Playbook(Player):
+    def __init__(self, id_, moves, result):
+        super().__init__(id_)
+        self.moves = moves
+        self.step = 0
+        self.result = result
+
+    def make_decision(self, **kwargs):
+        valid_actions = kwargs['valid_actions']
+        camp = kwargs['next_player']
+        board = kwargs['board']
+        if len(valid_actions) == 0:
+            return {'action': Action.RESIGN}
+        if kwargs['sue_draw']:
+            return {'action': Action.SUE_DRAW, 'act_param': True}
+
+        if self.step == len(self.moves) and self.result == '1/2-1/2':
+            return {'action': Action.SUE_DRAW}
+        move = self.moves[self.step]
+        self.step += 1
+
+        time.sleep(1)
+
+        force, action, act_param, piece, dst = parse_action(move, camp, board)
+        # print(force, action, act_param, piece, dst)
+        if action not in (Action.RESIGN, Action.SUE_DRAW) and \
+                {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
+            raise ValueError('illegal move')
+        return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
