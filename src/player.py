@@ -153,13 +153,14 @@ class Playbook(Player):
         if kwargs['sue_draw']:
             return {'action': Action.SUE_DRAW, 'act_param': True}
 
-        if self.step == len(self.moves) and self.result == '1/2-1/2':
-            return {'action': Action.SUE_DRAW}
+        if self.step == len(self.moves):
+            if self.result == '1/2-1/2':
+                return {'action': Action.SUE_DRAW}
+            else:
+                return {'action': Action.RESIGN}
+
         move = self.moves[self.step]
         self.step += 1
-
-        time.sleep(1)
-
         force, action, act_param, piece, dst = parse_action(move, camp, board)
         # print(force, action, act_param, piece, dst)
         if action not in (Action.RESIGN, Action.SUE_DRAW) and \

@@ -243,6 +243,22 @@ class XiangActionTest(unittest.TestCase):
         for cmd in cmds[2:]:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
 
+    def test_parse_action6(self):
+        cmds = ['相3退5', '相3进1']
+        anss = [(4, 2), (0, 2)]
+        camp = Camp.BLACK
+        p1 = Xiang(camp, 2, 4)
+        p2 = Xiang(camp, 2, 0)
+        situation = [p1, p2]
+        board = Board(situation)
+        for cmd, ans in zip(cmds[:1], anss[:1]):
+            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            self.assertTrue(piece is p1)
+            self.assertEqual(ans, dst)
+        for cmd, ans in zip(cmds[1:], anss[1:]):
+            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            self.assertTrue(piece is p2)
+            self.assertEqual(ans, dst)
 
 class ShiActionTest(unittest.TestCase):
     def test_parse_action1(self):

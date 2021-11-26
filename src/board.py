@@ -197,7 +197,7 @@ class Board:
                 d[p.col].append(p)
         return d
 
-    def get_piece(self, camp, force_, col, row_indicator: RowIndicator = None):
+    def get_piece(self, camp, force_, col, row_indicator: RowIndicator = None, action=None):
         pieces = []
         for p in self.situation:
             if p.camp == camp and p.force == force_ and p.col == col:
@@ -229,6 +229,12 @@ class Board:
         elif row_indicator == RowIndicator.FIFTH:
             assert n_pieces == 5
             return pieces[4]
+
+        if row_indicator is None and force_ in (Force.SHI, Force.XIANG):
+            if action == Action.ADVANCE:
+                return pieces[-1]
+            elif action == Action.RETREAT:
+                return pieces[0]
 
     def make_move(self, piece, dst):
         """
@@ -339,10 +345,6 @@ def parse_action(cmd: str, camp: Camp, board: Board):
             else:
                 raise ValueError('undistinguishable')
 
-    piece = board.get_piece(camp, force, src_col, prefix)
-    if piece is None:
-        raise ValueError('piece not found')
-
     n = set(cmd).intersection(ACTION_ALIAS_INV)
     assert len(n) == 1
     (a), = n  # get the unique element
@@ -359,6 +361,11 @@ def parse_action(cmd: str, camp: Camp, board: Board):
                          (Force.SHUAI, Action.TRAVERSE),
                          (Force.PAO, Action.TRAVERSE),
                          (Force.BING, Action.TRAVERSE)}
+
+    piece = board.get_piece(camp, force, src_col, prefix, action)
+    if piece is None:
+        raise ValueError('piece not found')
+
     if (piece.force, action) in param_must_be_col:
         act_param -= 1
 

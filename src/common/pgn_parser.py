@@ -22,7 +22,7 @@ opt_line: "[" WORD WSI+ ESC_STR "]"
 
 moves: INT "." WSI+ move WSI+ move WS+ VAR? COMMENT?
 move: /.{4}/
-result_line: (INT "." WSI+ move WS+)? SCORE
+result_line: INT "." WSI+ (move WS+)? SCORE
 
 post: "="+ NL (/[^\[]+/ NL?)*
 """

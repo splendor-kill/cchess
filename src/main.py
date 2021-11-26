@@ -29,7 +29,7 @@ def demo(pgn):
     from common.pgn_parser import get_moves_and_result
     moves, result = get_moves_and_result(pgn)
 
-    players = {Camp.RED: Playbook(Camp.RED, moves[::2]), Camp.BLACK: Playbook(Camp.BLACK, moves[1::2])}
+    players = {Camp.RED: Playbook(Camp.RED, moves[::2], result), Camp.BLACK: Playbook(Camp.BLACK, moves[1::2], result)}
     env = Env()
     for p in players.values():
         p.env = env
