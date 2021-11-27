@@ -28,6 +28,7 @@ class Xiang(Piece):
         return col, row
 
     def get_valid_pos(self, board_):
+        from board import N_COLS
         test_pos = [(+2, +2), (+2, -2), (-2, +2), (-2, -2)]
         handicap = [(+1, +1), (+1, -1), (-1, +1), (-1, -1)]
         poses = []
@@ -37,8 +38,10 @@ class Xiang(Piece):
             if handi_p is not None:
                 continue
             col, row = self.col + pos[0], self.row + pos[1]
+            if not 0 <= col < N_COLS:
+                continue
             _, row_in_my_view = self.with_my_view(col, row)
-            if row_in_my_view > 4:  # cannot cross river
+            if not 0 <= row_in_my_view <= 4:  # cannot cross river
                 continue
             p = board_.piece_at(col, row)
             if p is None or p.camp != self.camp:

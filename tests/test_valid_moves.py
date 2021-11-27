@@ -1,4 +1,6 @@
 import unittest
+import sys
+sys.path.append('src')
 
 from board import Board, N_COLS, N_ROWS
 from force import *

@@ -1,4 +1,6 @@
 import unittest
+import sys
+sys.path.append('src')
 
 from board import Board
 from force import *
@@ -103,6 +105,12 @@ class FinalValidActionsTest(unittest.TestCase):
         self.assertEqual(25, len(actions))
         actions = board.get_final_valid_actions(Camp.RED)
         self.assertEqual(1, len(actions))
+
+    def test3(self):
+        from constants import kaggle_1
+        board = Board(kaggle_1)
+        actions = board.get_valid_actions(Camp.BLACK)
+        self.assertEqual(32, len(actions))
 
 
 if __name__ == '__main__':

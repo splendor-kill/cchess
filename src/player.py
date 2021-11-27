@@ -160,10 +160,11 @@ class Playbook(Player):
                 return {'action': Action.RESIGN}
 
         move = self.moves[self.step]
+        print(f'{self.id.name} {move}')
         self.step += 1
         force, action, act_param, piece, dst = parse_action(move, camp, board)
         # print(force, action, act_param, piece, dst)
         if action not in (Action.RESIGN, Action.SUE_DRAW) and \
-                {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
+                {'piece': piece, 'dst': dst} not in valid_actions:
             raise ValueError('illegal move')
         return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}

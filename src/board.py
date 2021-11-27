@@ -273,7 +273,7 @@ class Board:
         if col1 != col2:
             return False
         lb, ub = min(row1, row2), max(row1, row2)
-        for r in range(lb + 1, ub - 1):  # have any piece in between
+        for r in range(lb + 1, ub):  # have any piece in between
             p = self.piece_at(col1, r)
             if p is not None and p is not ignore_piece:
                 return False

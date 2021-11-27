@@ -1,4 +1,6 @@
 import unittest
+import sys
+sys.path.append('src')
 
 from board import Board, parse_action, Action
 from force import *
@@ -259,6 +261,21 @@ class XiangActionTest(unittest.TestCase):
             force, action, act_param, piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
+
+    def test_parse_action7(self):
+        from constants import kaggle_1
+        cmds = ['象5退3']
+        anss = [(2, 0)]
+        camp = Camp.BLACK
+        board = Board(kaggle_1)
+        xiang = board.piece_at(4, 2)
+        self.assertEqual(Force.XIANG, xiang.force)
+        for cmd, ans in zip(cmds, anss):
+            force, action, act_param, piece, dst = parse_action(
+                cmd, camp, board)
+            self.assertTrue(piece is xiang)
+            self.assertEqual(ans, dst)
+
 
 class ShiActionTest(unittest.TestCase):
     def test_parse_action1(self):
