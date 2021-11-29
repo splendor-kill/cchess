@@ -236,6 +236,7 @@ class Board:
                 return pieces[-1]
             elif action == Action.RETREAT:
                 return pieces[0]
+        raise ValueError(f'too many pieces {force_.name} in col {col} with indicator {row_indicator}')
 
     def make_move(self, piece, dst):
         """
