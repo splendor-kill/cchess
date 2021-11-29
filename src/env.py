@@ -40,8 +40,8 @@ class Env:
             self.winner = self.cur_player.opponent()
             return None, REWARD_LOSE, True, None
         if action['action'] == Action.SUE_DRAW:
-            assert 'act_param' in action
             if self.sue_draw:
+                assert 'act_param' in action
                 if action['act_param']:  # two camps agree with draw
                     self.done = True
                     self.winner = None

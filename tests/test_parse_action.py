@@ -585,6 +585,39 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
+            
+    def test_parse_action6(self):
+        cmds = ['前兵进一']
+        anss = [(4, 3)]
+        camp = Camp.RED
+        situation = '''
+        ＋－＋－＋－士－將－士－象－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        象－＋－馬－＋－砲－＋－砲－＋－馬
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－炮－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－卒－＋－兵－＋－＋－＋－卒
+        兵－＋－＋－傌－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－兵－＋－＋－＋－兵
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－相－＋－傌－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－仕－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－相－仕－帥－＋－＋－＋－＋
+        '''
+        board = Board(situation)
+        p1 = board.piece_at(4, 4)
+        p2 = board.piece_at(4, 6)
+        expected_p = [p1]
+        for cmd, ans, exp in zip(cmds, anss, expected_p):
+            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            self.assertTrue(piece is exp)
+            self.assertEqual(ans, dst)
 
 
 class SpecialActionTest(unittest.TestCase):
