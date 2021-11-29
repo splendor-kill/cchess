@@ -53,6 +53,33 @@ class ShuaiMeetTest(unittest.TestCase):
         meet = board.test_shuai_meet((red.col, red.row), (black.col, black.row), ignore_piece=p2)
         self.assertTrue(meet)
 
+    def test5(self):
+        situation = '''
+        ＋－＋－＋－＋－將－＋－象－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－傌－＋－士－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－＋－＋－象－士－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ＋－＋－相－＋－馬－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－＋－帥－＋－＋－＋－＋－＋
+        '''
+        board = Board(situation)
+        black_shuai = board.piece_at(4, 0)
+        shuai1 = board.get_shuai(Camp.BLACK)
+        self.assertIsNotNone(shuai1)
+        self.assertTrue(shuai1 is black_shuai)
+
 
 class CheckTest(unittest.TestCase):
     def test1(self):

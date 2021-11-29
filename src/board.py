@@ -115,8 +115,8 @@ class Board:
         for a in valid_actions:
             bak_pos, dst_p, dst_p_idx = None, None, None
             try:
-                bak_pos, dst_p, dst_p_idx = self.virtual_move(a['piece'], a['dst'])
-                if not self.test_check(camp.opponent()):
+                bak_pos, dst_p, dst_p_idx, enemy_shuai_will_be_killed = self.virtual_move(a['piece'], a['dst'])
+                if enemy_shuai_will_be_killed or not self.test_check(camp.opponent()):
                     real_actions.append(a)
             finally:
                 self.undo_virtual_move(a['piece'], bak_pos, dst_p, dst_p_idx)
@@ -128,7 +128,7 @@ class Board:
             bak_pos = (piece.col, piece.row)
             piece.col = dst[0]
             piece.row = dst[1]
-            return bak_pos, None, None
+            return bak_pos, None, None, None
         else:
             if piece_at_dst.camp != piece.camp:
                 bak_pos = (piece.col, piece.row)
@@ -136,8 +136,9 @@ class Board:
                 self.situation.remove(piece_at_dst)
                 piece.col = dst[0]
                 piece.row = dst[1]
-                return bak_pos, piece_at_dst, bak_idx
-        return None, None, None
+                enemy_shuai_will_be_killed = piece_at_dst.force == Force.SHUAI
+                return bak_pos, piece_at_dst, bak_idx, enemy_shuai_will_be_killed
+        return None, None, None, None
 
     def undo_virtual_move(self, bak_piece, bak_pos, removed_piece, removed_piece_idx):
         if removed_piece is not None and removed_piece_idx is not None:

@@ -3,7 +3,7 @@ from lark import Lark, Tree, Transformer, Visitor, Token
 grammar = r"""
 start: pgn+
 
-pgn: options+ moves+ result_line post?
+pgn: options+ moves* result_line post?
 
 %import common.WS_INLINE -> WSI
 %import common.WS
