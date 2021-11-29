@@ -343,7 +343,11 @@ def parse_action(cmd: str, camp: Camp, board: Board):
             if prefix in (RowIndicator.MID, RowIndicator.THIRD, RowIndicator.FORTH):
                 src_col = max(col2pieces, key=lambda k: len(col2pieces[k]))
             else:
-                raise ValueError('undistinguishable')
+                col_num_ge2 = {col: len(p) for col, p in col2pieces.items() if len(p) > 1}
+                if len(col_num_ge2) == 1:
+                    src_col = next(iter(col_num_ge2))
+                else:
+                    raise ValueError('undistinguishable')
 
     n = set(cmd).intersection(ACTION_ALIAS_INV)
     assert len(n) == 1
