@@ -444,27 +444,7 @@ def test():
     print(board)
 
 
-def test2():
-    fen1 = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
-    board = Board(fen1)
-    print(board)
-    fen1_ = board.board_to_fen1()
-    print(fen1_)
-    assert fen1 == fen1_
-    board1 = Board(FULL_BOARD)
-    assert str(board) == str(board1)
-    
-    fen1 = '9/9/3k5/9/9/9/4R4/3A5/8r/4K4'
-    board = Board(fen1)
-    print(board)
-    fen1_ = board.board_to_fen1()
-    print(fen1_)
-    assert fen1 == fen1_
-    
-
-
 if __name__ == '__main__':
     from force import *
 
-    # test()
-    test2()
+    test()
