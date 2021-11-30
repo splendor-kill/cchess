@@ -168,3 +168,13 @@ class Piece:
         if shuai1.col == action_col:
             return False
         return board_.test_shuai_meet((shuai1.col, shuai1.row), (shuai2.col, shuai2.row), ignore_piece=self)
+
+    def encode(self):
+        return self.camp.value * 1000 + self.force.value * 100 + self.col * 10 + self.row
+
+    @staticmethod
+    def decode(num):
+        camp, num = divmod(num, 1000)
+        force, num = divmod(num, 100)
+        col, row = divmod(num, 10)
+        return Camp(camp), Force(force), col, row

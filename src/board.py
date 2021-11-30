@@ -95,6 +95,8 @@ class Board:
                 situation = self._parse_fen1(situation)
             else:
                 situation = self._parse(situation)
+        elif isinstance(situation, np.ndarray):
+            situation = self.decode(situation)
         self.situation = situation
         assert isinstance(self.situation, list)
         self.checked = {Camp.RED: False, Camp.BLACK: False}
@@ -342,6 +344,23 @@ class Board:
                 return True
         return False
 
+    def encode(self):
+        a = np.zeros((N_ROWS, N_COLS), dtype=np.int32)
+        for p in self.situation:
+            a[p.row, p.col] = p.encode()
+        return a
+
+    @staticmethod
+    def decode(arr: np.ndarray):
+        rows, cols = arr.nonzero()
+        sit = []
+        for col, row in zip(cols, rows):
+            n = arr[row, col]
+            camp, force, j, i = Piece.decode(n)
+            clz = FORCE_CLZ[force]
+            sit.append(clz(camp, j, i))
+        return sit
+
 
 def parse_action(cmd: str, camp: Camp, board: Board):
     """中式记法，参考 https://zh.wikipedia.org/wiki/%E8%B1%A1%E6%A3%8B
@@ -478,6 +497,7 @@ def test():
     print(board)
     board = Board(FULL_BOARD)
     print(board)
+    print(board.encode())
 
 
 if __name__ == '__main__':
