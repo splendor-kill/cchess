@@ -2,8 +2,18 @@ from collections import defaultdict
 
 import numpy as np
 
-from constants import EMPTY_BOARD
+from constants import EMPTY_BOARD, FULL_BOARD
 from piece import *
+import force
+
+FORCE_CLZ = {Force.JU: force.Ju,
+             Force.MA: force.Ma,
+             Force.XIANG: force.Xiang,
+             Force.SHI: force.Shi,
+             Force.SHUAI: force.Shuai,
+             Force.PAO: force.Pao,
+             Force.BING: force.Bing
+             }
 
 N_ROWS = 10  # term: rank
 N_COLS = 9  # term: file
@@ -79,7 +89,10 @@ class Board:
 
     def __init__(self, situation):
         if isinstance(situation, str):
-            situation = self._parse(situation)
+            if '/' in situation:
+                situation = self._parse_fen1(situation)
+            else:
+                situation = self._parse(situation)
         self.situation = situation
         assert isinstance(self.situation, list)
         self.checked = {Camp.RED: False, Camp.BLACK: False}
@@ -166,15 +179,6 @@ class Board:
 
     @staticmethod
     def _parse(board):
-        import force
-        force_clz = {Force.JU: force.Ju,
-                     Force.MA: force.Ma,
-                     Force.XIANG: force.Xiang,
-                     Force.SHI: force.Shi,
-                     Force.SHUAI: force.Shuai,
-                     Force.PAO: force.Pao,
-                     Force.BING: force.Bing,
-                     }
         board = board.strip()
         rows = board.splitlines()
         rows = rows[:9:2] + rows[-9::2]
@@ -187,9 +191,52 @@ class Board:
             for j, c in enumerate(r):
                 if c in PIECE_CHARS:
                     camp, force = recog_piece(c)
-                    clz = force_clz[force]
+                    clz = FORCE_CLZ[force]
                     sit.append(clz(camp, j, i))
         return sit
+
+    @staticmethod
+    def _parse_fen1(board):
+        assert '/' in board
+        board = board.strip()
+        rows = board.split('/')
+        assert len(rows) == N_ROWS
+        sit = []
+        for i, r in enumerate(rows):
+            j = 0
+            for e in r:
+                if e in PIECE_CHARS_WXF:
+                    camp = Camp.BLACK if e.islower() else Camp.RED
+                    force = FORCE_ALIAS_INV[e]
+                    clz = FORCE_CLZ[force]
+                    sit.append(clz(camp, j, i))
+                    j += 1
+                else:
+                    assert e.isdigit()
+                    j += int(e)
+            assert j == N_COLS
+        return sit
+
+    def board_to_fen1(self):
+        b = [[' ' for _ in range(N_COLS)] for _ in range(N_ROWS)]
+        for p in self.situation:
+            b[p.row][p.col] = piece_2_char_wxf(p.camp, p.force)
+        rows = []
+        for row in b:
+            space_cnt = 0
+            parts = []
+            for e in row:
+                if e == ' ':
+                    space_cnt += 1
+                else:
+                    if space_cnt != 0:
+                        parts.append(str(space_cnt))
+                        space_cnt = 0
+                    parts.append(e)
+            if space_cnt != 0:
+                parts.append(str(space_cnt))
+            rows.append(''.join(parts))
+        return '/'.join(rows)
 
     def filter(self, camp, force):
         d = defaultdict(list)
@@ -393,13 +440,31 @@ def test():
                  ]
     board = Board(situation)
     print(board)
-
-    from constants import FULL_BOARD
     board = Board(FULL_BOARD)
     print(board)
+
+
+def test2():
+    fen1 = 'rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR'
+    board = Board(fen1)
+    print(board)
+    fen1_ = board.board_to_fen1()
+    print(fen1_)
+    assert fen1 == fen1_
+    board1 = Board(FULL_BOARD)
+    assert str(board) == str(board1)
+    
+    fen1 = '9/9/3k5/9/9/9/4R4/3A5/8r/4K4'
+    board = Board(fen1)
+    print(board)
+    fen1_ = board.board_to_fen1()
+    print(fen1_)
+    assert fen1 == fen1_
+    
 
 
 if __name__ == '__main__':
     from force import *
 
-    test()
+    # test()
+    test2()

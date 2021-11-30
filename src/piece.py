@@ -13,6 +13,7 @@ if os.name == 'posix':
     APPEAR_CHECK = '\033[1;33;41m'
 
 PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
+PIECE_CHARS_WXF = 'kabnrcpKABNRCP'
 PLACE_CHARS = '＋Ｘ'
 
 
@@ -40,13 +41,13 @@ class Force(IntEnum):
 
 
 FORCE_ALIAS = {
-    Force.SHUAI: tuple('将帅將帥'),
-    Force.SHI: tuple('士仕'),
-    Force.XIANG: tuple('象相'),
-    Force.MA: tuple('马㐷馬傌'),
-    Force.JU: tuple('车伡車俥'),
-    Force.PAO: tuple('炮砲'),
-    Force.BING: tuple('兵卒'),
+    Force.SHUAI: tuple('将帅將帥kK'),
+    Force.SHI: tuple('士仕aA'),
+    Force.XIANG: tuple('象相bB'),
+    Force.MA: tuple('马㐷馬傌nN'),
+    Force.JU: tuple('车伡車俥rR'),
+    Force.PAO: tuple('炮砲cC'),
+    Force.BING: tuple('兵卒pP'),
 }
 FORCE_ALIAS_INV = {e: k for k, v in FORCE_ALIAS.items() for e in v}
 
@@ -68,6 +69,9 @@ def piece_2_char(camp, force):
     index = 7 * (camp.value - 1) + force.value - 1
     return PIECE_CHARS[index]
 
+def piece_2_char_wxf(camp, force):
+    index = 7 * (camp.value - 1) + force.value - 1
+    return PIECE_CHARS_WXF[index]
 
 def recog_piece(piece: str):
     assert piece in PIECE_CHARS
