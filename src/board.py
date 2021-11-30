@@ -63,6 +63,8 @@ ROW_INDICATOR_ALIAS = {
 }
 ROW_INDICATOR_ALIAS_INV = {v: k for k, v in ROW_INDICATOR_ALIAS.items()}
 
+ICCS_ACTION_COL_MAP = {c: i for i, c in enumerate('abcdefghi')}
+ICCS_ACTION_ROW_MAP = {str(i): N_ROWS - 1 - i for i in range(N_ROWS)}
 
 def toggle_view(col=None, row=None):
     col = N_COLS - 1 - col if col is not None else None
@@ -245,7 +247,7 @@ class Board:
                 d[p.col].append(p)
         return d
 
-    def get_piece(self, camp, force_, col, row_indicator: RowIndicator = None, action=None):
+    def get_piece(self, camp, force_, col, row_indicator: RowIndicator = None, action=None) -> Piece:
         pieces = []
         for p in self.situation:
             if p.camp == camp and p.force == force_ and p.col == col:
@@ -351,11 +353,6 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     """
 
     cmd = cmd.strip()
-    if cmd == ACTION_ALIAS[Action.SUE_DRAW]:
-        return None, Action.SUE_DRAW, None, None, None
-    if cmd == ACTION_ALIAS[Action.RESIGN]:
-        return None, Action.RESIGN, None, None, None
-
     if len(cmd) == 3:
         if cmd[-1] in {ACTION_ALIAS[Action.ADVANCE], ACTION_ALIAS[Action.RETREAT]}:  # 处理如“兵七进”
             cmd = cmd + '1'
@@ -421,10 +418,49 @@ def parse_action(cmd: str, camp: Camp, board: Board):
 
     if (piece.force, action) in param_must_be_col:
         act_param -= 1
-
     dst = piece.calc_dst(action, act_param)
 
-    return force, action, act_param, piece, dst
+    return piece, dst
+
+
+def parse_action_iccs(cmd: str, camp: Camp, board: Board):
+    """https://www.xqbase.com/protocol/cchess_move.htm
+    ICCS board coord sys:        
+               cxj
+         abcdefghi
+        9         9
+        8         8
+        7         7
+        6         6
+        5         5
+        4         4
+        3         3
+      r 2         2
+      y 1         1
+      i 0         0
+         abcdefghi
+
+    Args:
+        cmd (str): str, e.g. h2e2
+        camp (Camp): which side
+        board (Board):
+    Returns:
+        locations (src, dst)
+    """
+    cmd = cmd.strip().lower()
+    src, dst = parse_iccs_action(cmd)
+    piece = board.piece_at(src[0], src[1])
+    if piece is None:
+        raise ValueError('piece not found')
+    assert piece.camp == camp
+    return piece, dst
+
+
+def parse_iccs_action(move):
+    assert len(move) == 4
+    src = ICCS_ACTION_COL_MAP[move[0]], ICCS_ACTION_ROW_MAP[move[1]]
+    dst = ICCS_ACTION_COL_MAP[move[2]], ICCS_ACTION_ROW_MAP[move[3]]
+    return src, dst
 
 
 def test():

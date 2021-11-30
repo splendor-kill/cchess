@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.append('src')
 
-from board import Board, parse_action, Action
+from board import Board, parse_action, Action, parse_action_iccs
 from force import *
 from piece import Camp, Force
 
@@ -31,7 +31,7 @@ class JuActionTest(unittest.TestCase):
         situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
 
@@ -44,11 +44,11 @@ class JuActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:3], anss[:3]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[3:], anss[3:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
 
@@ -61,11 +61,11 @@ class JuActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:3], anss[:3]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[3:], anss[3:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -76,7 +76,7 @@ class MaActionTest(unittest.TestCase):
         camp = Camp.RED
         from constants import FULL_BOARD
         board = Board(FULL_BOARD)
-        force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+        piece, dst = parse_action(cmd, camp, board)
         self.assertEqual(camp, piece.camp)
         self.assertEqual(Force.MA, piece.force)
         self.assertEqual((1, 9), (piece.col, piece.row))
@@ -87,7 +87,7 @@ class MaActionTest(unittest.TestCase):
         camp = Camp.BLACK
         from constants import FULL_BOARD
         board = Board(FULL_BOARD)
-        force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+        piece, dst = parse_action(cmd, camp, board)
         self.assertEqual(camp, piece.camp)
         self.assertEqual(Force.MA, piece.force)
         self.assertEqual((7, 0), (piece.col, piece.row))
@@ -109,7 +109,7 @@ class MaActionTest(unittest.TestCase):
         situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertEqual(camp, piece.camp)
             self.assertEqual(Force.MA, piece.force)
             self.assertEqual((col, row), (piece.col, piece.row))
@@ -124,7 +124,7 @@ class MaActionTest(unittest.TestCase):
         situation = [Shuai(Camp.RED, 4, 9), Shuai(Camp.BLACK, 3, 0), p]
         board = Board(situation)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertEqual(camp, piece.camp)
             self.assertEqual(Force.MA, piece.force)
             self.assertEqual((col, row), (piece.col, piece.row))
@@ -139,11 +139,11 @@ class MaActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:2], anss[:2]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[2:], anss[2:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
 
@@ -156,11 +156,11 @@ class MaActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:2], anss[:2]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[2:], anss[2:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -176,7 +176,7 @@ class XiangActionTest(unittest.TestCase):
         col, row = 6, 9
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -191,7 +191,7 @@ class XiangActionTest(unittest.TestCase):
         col, row = 2, 0
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -205,11 +205,11 @@ class XiangActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:1], anss[:1]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[1:], anss[1:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
 
@@ -222,11 +222,11 @@ class XiangActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:1], anss[:1]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[1:], anss[1:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -254,11 +254,11 @@ class XiangActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:1], anss[:1]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[1:], anss[1:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -271,8 +271,7 @@ class XiangActionTest(unittest.TestCase):
         xiang = board.piece_at(4, 2)
         self.assertEqual(Force.XIANG, xiang.force)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(
-                cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is xiang)
             self.assertEqual(ans, dst)
 
@@ -288,7 +287,7 @@ class ShiActionTest(unittest.TestCase):
         col, row = 5, 9
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -303,7 +302,7 @@ class ShiActionTest(unittest.TestCase):
         col, row = 5, 0
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -317,11 +316,11 @@ class ShiActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:1], anss[:1]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[1:], anss[1:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
 
@@ -334,11 +333,11 @@ class ShiActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:1], anss[:1]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[1:], anss[1:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -369,7 +368,7 @@ class ShuaiActionTest(unittest.TestCase):
         col, row = 4, 9
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -384,7 +383,7 @@ class ShuaiActionTest(unittest.TestCase):
         col, row = 4, 0
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             piece.move_to(board, dst[0], dst[1])
@@ -410,7 +409,7 @@ class PaoActionTest(unittest.TestCase):
         col, row = 7, 7
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
         camp = camp.opponent()
@@ -418,7 +417,7 @@ class PaoActionTest(unittest.TestCase):
         col, row = toggle_view(col, row)
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
 
@@ -445,11 +444,11 @@ class PaoActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:3], anss[:3]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[3:], anss[3:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
 
@@ -462,11 +461,11 @@ class PaoActionTest(unittest.TestCase):
         situation = [p1, p2]
         board = Board(situation)
         for cmd, ans in zip(cmds[:3], anss[:3]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p1)
             self.assertEqual(ans, dst)
         for cmd, ans in zip(cmds[3:], anss[3:]):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p2)
             self.assertEqual(ans, dst)
 
@@ -482,7 +481,7 @@ class BingActionTest(unittest.TestCase):
         col, row = 6, 6
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             e = board.piece_at(dst[0], dst[1])
@@ -495,7 +494,7 @@ class BingActionTest(unittest.TestCase):
         col, row = toggle_view(col, row)
         p = board.piece_at(col, row)
         for cmd, ans in zip(cmds, anss):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is p)
             self.assertEqual(ans, dst)
             e = board.piece_at(dst[0], dst[1])
@@ -522,7 +521,7 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         expected_p = [p3, p2, p1, p3, p2, p2]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)
             self.assertEqual(ans, dst)
 
@@ -536,7 +535,7 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         expected_p = [p3, p2, p1, p3, p2]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)
             self.assertEqual(ans, dst)
 
@@ -553,7 +552,7 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         expected_p = [p3, p2, p1, p1, p4, p5, p3, p4]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)
             self.assertEqual(ans, dst)
 
@@ -569,7 +568,7 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         expected_p = [p3, p2, p1, p1, p4, p5, p3, p4]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)
             self.assertEqual(ans, dst)
 
@@ -615,7 +614,7 @@ class BingActionTest(unittest.TestCase):
         p2 = board.piece_at(4, 6)
         expected_p = [p1]
         for cmd, ans, exp in zip(cmds, anss, expected_p):
-            force, action, act_param, piece, dst = parse_action(cmd, camp, board)
+            piece, dst = parse_action(cmd, camp, board)
             self.assertTrue(piece is exp)
             self.assertEqual(ans, dst)
 
@@ -643,12 +642,41 @@ class SpecialActionTest(unittest.TestCase):
         ＋－＋－＋－＋－帥－仕－＋－＋－＋
         '''
         board = Board(opening)
-        print(board)
         camp = Camp.BLACK
+        from player import Human
         cmd = '认输'
-        force, action, act_param, piece, dst = parse_action(cmd, camp, board)
-        self.assertEqual(Action.RESIGN, action)
+        action = Human.flex_action_input(cmd, camp, board, sue_draw=False)
+        self.assertEqual(Action.RESIGN, action['action'])
 
+
+class ICCSActionTest(unittest.TestCase):
+    def test_parse_action1(self):
+        from constants import FULL_BOARD
+        board = Board(FULL_BOARD)
+        cmds = ['h2e2', 'c3c4', 'i0i1', 'h0g2', 'c0a2', 'f0e1', 'e0e1']
+        ans_forces = [Force.PAO, Force.BING, Force.JU, Force.MA, Force.XIANG, Force.SHI, Force.SHUAI]
+        ans_srcs = [(7, 7), (2, 6), (8, 9), (7, 9), (2, 9), (5, 9), (4, 9)]
+        ans_dsts = [(4, 7), (2, 5), (8, 8), (6, 7), (0, 7), (4, 8), (4, 8)]
+        camp = Camp.RED
+
+        for cmd, force, src, dst in zip(cmds, ans_forces, ans_srcs, ans_dsts):
+            p = board.piece_at(*src)
+            piece, dst1 = parse_action_iccs(cmd, camp, board)
+            self.assertTrue(piece is p)
+            self.assertEqual(camp, p.camp)
+            self.assertEqual(force, p.force)
+            self.assertEqual(src[0], p.col)
+            self.assertEqual(src[1], p.row)
+            self.assertEqual(dst, dst1)
+
+    def test_parse_action2(self):
+        from constants import FULL_BOARD
+        board = Board(FULL_BOARD)
+        cmds = ['b7b0']
+        camp = Camp.RED
+        board.get_valid_actions
+        for cmd in cmds:
+            self.assertRaises(Exception, parse_action_iccs, cmd, camp, board)
 
 
 if __name__ == '__main__':

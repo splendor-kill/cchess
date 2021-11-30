@@ -92,12 +92,16 @@ class Human(Player):
         for k, v in pinyin.items():
             directive = directive.replace(k, v)
         directive = directive.replace(' ', '')
-        force, action, act_param, piece, dst = parse_action(directive, camp, board)
-        # print(force, action, act_param, piece, dst)
-        if action not in (Action.RESIGN, Action.SUE_DRAW) and \
-                {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
+        
+        if directive == ACTION_ALIAS[Action.SUE_DRAW]:
+            return{'action': Action.SUE_DRAW}
+        if directive == ACTION_ALIAS[Action.RESIGN]:
+            return{'action': Action.RESIGN}
+
+        piece, dst = parse_action(directive, camp, board)
+        if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
             raise ValueError('illegal move')
-        return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
+        return {'piece': piece, 'dst': dst}
 
 
 def infer_action_and_param(piece, dst):
@@ -162,9 +166,7 @@ class Playbook(Player):
         move = self.moves[self.step]
         print(f'{self.id.name} {move}')
         self.step += 1
-        force, action, act_param, piece, dst = parse_action(move, camp, board)
-        # print(force, action, act_param, piece, dst)
-        if action not in (Action.RESIGN, Action.SUE_DRAW) and \
-                {'piece': piece, 'dst': dst} not in valid_actions:
+        piece, dst = parse_action(move, camp, board)
+        if {'piece': piece, 'dst': dst} not in valid_actions:
             raise ValueError('illegal move')
-        return {'piece': piece, 'action': action, 'act_param': act_param, 'dst': dst}
+        return {'piece': piece, 'dst': dst}
