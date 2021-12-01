@@ -1,3 +1,4 @@
+python==3.7
 numpy
 scikit-learn
 pandas
@@ -5,4 +6,6 @@ pyyaml
 easydict
 pyperclip
 keras==2.3.1
+h5py==2.10.0
+tensorflow==1.15
 lark

@@ -1,5 +1,6 @@
 from env import Env
 from piece import Camp
+from board import get_iccs_action_space
 from player import Human, NoBrain, Playbook
 from common.utils import load_cfg
 from config import cfg
@@ -65,16 +66,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.DEBUG,
         format='##### %(processName)-15s %(filename)10s line %(lineno)-5d %(name)10s %(funcName)-10s: %(message)s',
-        stream=sys.stderr,
-
+        stream=sys.stderr
     )
 
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)
 
     cfg.update(load_cfg(args.config))
+    cfg.labels = get_iccs_action_space()
+    cfg.n_labels = len(cfg.labels)
     # np.random.seed(0)
     s = time.perf_counter()
 

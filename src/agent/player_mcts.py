@@ -6,10 +6,13 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
 from threading import Lock
+from typing import Tuple
 
 import numpy as np
+import copy
 
 from agent.helper import flip_policy
+from env import Env
 from player import Player
 
 logger = getLogger(__name__)
@@ -87,7 +90,7 @@ class MCTSPlayer(Player):
         self.play_config = play_config or self.config.play
         self.labels_n = config.n_labels
         self.labels = config.labels
-        # self.move_lookup = {chess.Move.from_uci(move): i for move, i in zip(self.labels, range(self.labels_n))}
+        self.move_lookup = {move: i for move, i in zip(self.labels, range(self.labels_n))}
         if dummy:
             return
 
@@ -119,7 +122,7 @@ class MCTSPlayer(Player):
                   f'q: {s[2]:7.3f} '
                   f'p: {s[3]:7.5f}')
 
-    def action(self, env, can_stop=True) -> str:
+    def make_decision(self, **kwargs) -> str:
         """
         Figures out the next best move
         within the specified environment and returns a string describing the action to take.
@@ -129,23 +132,32 @@ class MCTSPlayer(Player):
         :return: None if no action should be taken (indicating a resign). Otherwise, returns a string
             indicating the action to take in uci format
         """
+        from board import Board, Action
+        valid_actions = kwargs['valid_actions']
+        camp = kwargs['next_player']
+        board = kwargs['board']
+        observation = kwargs['board_state']
+        env = self.env
+        can_stop = True
+        n_turns = len(self.moves)
+        
         self.reset()
 
         # for tl in range(self.play_config.thinking_loop):
         root_value, naked_value = self.search_moves(env)
         policy = self.calc_policy(env)
-        my_action = int(np.random.choice(range(self.labels_n), p=self.apply_temperature(policy, env.num_halfmoves)))
+        my_action = int(np.random.choice(range(self.labels_n), p=self.apply_temperature(policy, n_turns)))
 
         if can_stop and self.play_config.resign_threshold is not None and \
                 root_value <= self.play_config.resign_threshold \
-                and env.num_halfmoves > self.play_config.min_resign_turn:
-            # noinspection PyTypeChecker
-            return None
+                and n_turns > self.play_config.min_resign_turn:
+            return {'action': Action.RESIGN}
         else:
-            self.moves.append([env.observation, list(policy)])
+            self.moves.append([observation, list(policy)])
+            
             return self.config.labels[my_action]
 
-    def search_moves(self, env) -> (float, float):
+    def search_moves(self, env) -> Tuple[float, float]:
         """
         Looks at all the possible moves using the AGZ MCTS algorithm
          and finds the highest value possible move. Does so using multiple threads to get multiple
@@ -158,7 +170,7 @@ class MCTSPlayer(Player):
         futures = []
         with ThreadPoolExecutor(max_workers=self.play_config.search_threads) as executor:
             for _ in range(self.play_config.simulation_num_per_move):
-                futures.append(executor.submit(self.search_my_move, env=env.copy(), is_root_node=True))
+                futures.append(executor.submit(self.search_my_move, env=copy.deepcopy(env), is_root_node=True))
 
         vals = [f.result() for f in futures]
 
@@ -219,7 +231,7 @@ class MCTSPlayer(Player):
 
         return leaf_v
 
-    def expand_and_evaluate(self, env) -> (np.ndarray, float):
+    def expand_and_evaluate(self, env) -> Tuple[np.ndarray, float]:
         """ expand new leaf, this is called only once per state
         this is called with state locked
         insert P(a|s), return leaf_v
@@ -370,5 +382,4 @@ def state_key(env) -> str:
     :param ChessEnv env: env to encode
     :return str: a str representation of the game state
     """
-    fen = env.board.fen().rsplit(' ', 1)  # drop the move clock
-    return fen[0]
+    return env.board.board_to_fen1()

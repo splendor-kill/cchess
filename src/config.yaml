@@ -1,7 +1,7 @@
 reword_of_illegal_action: -5
 
 opts:
-  new: False
+  new: True
 
 evaluate:
   vram_frac: 1.0

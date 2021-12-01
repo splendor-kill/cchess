@@ -23,6 +23,9 @@ class Player:
 
     def make_decision(self, **kwargs):
         raise NotImplementedError('leave the chance to successors')
+    
+    def finish_game(self, reward):
+        pass
 
 
 class Human(Player):

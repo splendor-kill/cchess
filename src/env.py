@@ -1,13 +1,18 @@
+from logging import getLogger
+
 from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE
 from constants import FULL_BOARD
-from piece import Camp
+from piece import Camp, Force
+
+
+logger = getLogger(__name__)
 
 
 class Env:
     def __init__(self, opening=None):
         self.opening = opening if opening is not None else FULL_BOARD
         self.stats = {}
-        self.board = None
+        self.board: Board = None
         self.cur_player = Camp.RED
         self.sue_draw = False
         self.done = False
@@ -69,7 +74,7 @@ class Env:
                 self.winner = self.cur_player
                 return None, REWARD_WIN, True, None
         except ValueError as e:
-            print(e)
+            logger.info(repr(e))
             self.done = True
             self.winner = self.cur_player.opponent()
             return None, REWARD_LOSE, True, None
@@ -93,3 +98,17 @@ class Env:
 
     def _switch_player(self):
         self.cur_player = self.cur_player.opponent()
+
+    def canonical_input_planes(self):
+        import numpy as np
+        b = self.board.encode()
+        planes = []
+        for c in Camp:
+            for f in Force:
+                v = c * 10 + f
+                p = (b==v).astype(np.int32)
+                planes.append(p)
+        # TODO: add history
+        planes = np.stack(planes, axis=0)
+        logger.info(f'input shape: {planes.shape}')
+        return planes

@@ -3,6 +3,7 @@ Defines the process which will listen on the pipe for
 an observation of the game state and return a prediction from the policy and
 value network.
 """
+from logging import getLogger
 from multiprocessing import connection, Pipe
 from threading import Thread
 
@@ -10,6 +11,8 @@ import numpy as np
 
 from config import cfg
 
+
+logger = getLogger(__name__)
 
 class ChessModelAPI:
     """
@@ -65,6 +68,7 @@ class ChessModelAPI:
                     result_pipes.append(pipe)
 
             data = np.asarray(data, dtype=np.float32)
+            logger.debug(f'data shape: {data.shape}')
             policy_ary, value_ary = self.agent_model.model.predict_on_batch(data)
             for pipe, p, v in zip(result_pipes, policy_ary, value_ary):
                 pipe.send((p, float(v)))

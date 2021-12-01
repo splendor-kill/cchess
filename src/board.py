@@ -110,12 +110,7 @@ class Board:
         return EMPTY_BOARD.format(**sit)
 
     def observe(self):
-        plane = np.zeros((N_ROWS, N_COLS), np.int32)
-        for p in self.situation:
-            c = piece_2_char(p.camp, p.force)
-            idx = PIECE_CHARS.index(c)
-            plane[p.row, p.col] = idx
-        return plane
+        return self.encode()
 
     def get_valid_actions(self, camp):
         valid_actions = []
@@ -481,6 +476,11 @@ def parse_iccs_action(move):
     src = ICCS_ACTION_COL_MAP[move[0]], ICCS_ACTION_ROW_MAP[move[1]]
     dst = ICCS_ACTION_COL_MAP[move[2]], ICCS_ACTION_ROW_MAP[move[3]]
     return src, dst
+
+
+def get_iccs_action_space():
+    locs = [c + r for c in ICCS_ACTION_COL_MAP.keys() for r in ICCS_ACTION_ROW_MAP.keys()]
+    return [src + dst for src in locs for dst in locs if src != dst]
 
 
 def test():

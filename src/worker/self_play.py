@@ -41,7 +41,8 @@ class SelfPlayWorker:
             while True:
                 game_idx += 1
                 start_time = time()
-                env, data = futures.popleft().result()
+                x = futures.popleft()
+                env, data = x.result()
                 print(f"game {game_idx:3} time={time() - start_time:5.1f}s "
                       f"halfmoves={env.num_halfmoves:3} {env.winner:12} "
                       f"{'by resign ' if env.resigned else '          '}")
@@ -98,8 +99,8 @@ def self_play_buffer(config, pipes_bundle):
     from piece import Camp
     from agent.player_mcts import MCTSPlayer
 
-    players = {Camp.RED: MCTSPlayer(Camp.RED, pipes_strand=pipes_strand),
-               Camp.BLACK: MCTSPlayer(Camp.BLACK, pipes_strand=pipes_strand)}
+    players = {Camp.RED: MCTSPlayer(Camp.RED, config, pipes_strand=pipes_strand),
+               Camp.BLACK: MCTSPlayer(Camp.BLACK, config, pipes_strand=pipes_strand)}
     env = Env()
     for p in players.values():
         p.env = env
