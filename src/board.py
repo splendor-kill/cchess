@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 
 import numpy as np
 
@@ -97,7 +98,7 @@ class Board:
                 situation = self._parse(situation)
         elif isinstance(situation, np.ndarray):
             situation = self.decode(situation)
-        self.situation = situation
+        self.situation: List[Piece] = situation
         assert isinstance(self.situation, list)
         self.checked = {Camp.RED: False, Camp.BLACK: False}
 
@@ -126,7 +127,7 @@ class Board:
                 valid_actions.append({'piece': p, 'dst': pos})
         return valid_actions
 
-    def get_final_valid_actions(self, camp):
+    def get_final_valid_actions(self, camp: Camp):
         valid_actions = self.get_valid_actions(camp)
         real_actions = []
         for a in valid_actions:
@@ -139,7 +140,7 @@ class Board:
                 self.undo_virtual_move(a['piece'], bak_pos, dst_p, dst_p_idx)
         return real_actions
 
-    def virtual_move(self, piece, dst):
+    def virtual_move(self, piece: Piece, dst):
         piece_at_dst = self.piece_at(*dst)
         if piece_at_dst is None:
             bak_pos = (piece.col, piece.row)
@@ -157,7 +158,7 @@ class Board:
                 return bak_pos, piece_at_dst, bak_idx, enemy_shuai_will_be_killed
         return None, None, None, None
 
-    def undo_virtual_move(self, bak_piece, bak_pos, removed_piece, removed_piece_idx):
+    def undo_virtual_move(self, bak_piece: Piece, bak_pos, removed_piece, removed_piece_idx):
         if removed_piece is not None and removed_piece_idx is not None:
             self.situation.insert(removed_piece_idx, removed_piece)
         if bak_pos is not None:
@@ -182,7 +183,7 @@ class Board:
                 return p
 
     @staticmethod
-    def _parse(board):
+    def _parse(board: str):
         board = board.strip()
         rows = board.splitlines()
         rows = rows[:9:2] + rows[-9::2]
@@ -200,7 +201,7 @@ class Board:
         return sit
 
     @staticmethod
-    def _parse_fen1(board):
+    def _parse_fen1(board: str):
         assert '/' in board
         board = board.strip()
         rows = board.split('/')
@@ -289,7 +290,7 @@ class Board:
                 return pieces[0]
         raise ValueError(f'too many pieces {force_.name} in col {col} with indicator {row_indicator}')
 
-    def make_move(self, piece, dst):
+    def make_move(self, piece: Piece, dst):
         """
 
         :param piece:
@@ -356,9 +357,9 @@ class Board:
         sit = []
         for col, row in zip(cols, rows):
             n = arr[row, col]
-            camp, force, j, i = Piece.decode(n)
+            camp, force = Piece.decode(n)
             clz = FORCE_CLZ[force]
-            sit.append(clz(camp, j, i))
+            sit.append(clz(camp, col, row))
         return sit
 
 

@@ -65,11 +65,11 @@ COL_ALIAS = {
 COL_ALIAS_INV = {e: k for k, v in COL_ALIAS.items() for e in v}
 
 
-def piece_2_char(camp, force):
+def piece_2_char(camp: Camp, force: Force):
     index = 7 * (camp.value - 1) + force.value - 1
     return PIECE_CHARS[index]
 
-def piece_2_char_wxf(camp, force):
+def piece_2_char_wxf(camp: Camp, force: Force):
     index = 7 * (camp.value - 1) + force.value - 1
     return PIECE_CHARS_WXF[index]
 
@@ -84,7 +84,7 @@ def recog_piece(piece: str):
 
 
 class Piece:
-    def __init__(self, camp, force, col, row):
+    def __init__(self, camp: Camp, force: Force, col, row):
         """xiangqi 术语参考 http://wxf.ca/xq/computer/XIANGQI_TERMS_IN_ENGLISH.pdf
 
         :param col: file
@@ -170,11 +170,9 @@ class Piece:
         return board_.test_shuai_meet((shuai1.col, shuai1.row), (shuai2.col, shuai2.row), ignore_piece=self)
 
     def encode(self):
-        return self.camp.value * 1000 + self.force.value * 100 + self.col * 10 + self.row
+        return self.camp.value * 10 + self.force.value
 
     @staticmethod
     def decode(num):
-        camp, num = divmod(num, 1000)
-        force, num = divmod(num, 100)
-        col, row = divmod(num, 10)
-        return Camp(camp), Force(force), col, row
+        camp, force = divmod(num, 10)
+        return Camp(camp), Force(force)
