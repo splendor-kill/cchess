@@ -66,6 +66,8 @@ ROW_INDICATOR_ALIAS_INV = {v: k for k, v in ROW_INDICATOR_ALIAS.items()}
 
 ICCS_ACTION_COL_MAP = {c: i for i, c in enumerate('abcdefghi')}
 ICCS_ACTION_ROW_MAP = {str(i): N_ROWS - 1 - i for i in range(N_ROWS)}
+ICCS_ACTION_COL_INV_MAP = {v: k for k, v in ICCS_ACTION_COL_MAP.items()}
+ICCS_ACTION_ROW_INV_MAP = {v: k for k, v in ICCS_ACTION_ROW_MAP.items()}
 
 def toggle_view(col=None, row=None):
     col = N_COLS - 1 - col if col is not None else None
@@ -467,7 +469,7 @@ def parse_action_iccs(cmd: str, camp: Camp, board: Board):
     piece = board.piece_at(src[0], src[1])
     if piece is None:
         raise ValueError('piece not found')
-    assert piece.camp == camp
+    assert piece.camp == camp    
     return piece, dst
 
 
@@ -477,6 +479,15 @@ def parse_iccs_action(move):
     dst = ICCS_ACTION_COL_MAP[move[2]], ICCS_ACTION_ROW_MAP[move[3]]
     return src, dst
 
+
+def to_iccs_action(action: dict):
+    piece = action['piece']
+    dst = action['dst']
+    fc = ICCS_ACTION_COL_INV_MAP[piece.col]
+    fr = ICCS_ACTION_ROW_INV_MAP[piece.row]
+    tc = ICCS_ACTION_COL_INV_MAP[dst[0]]
+    tr = ICCS_ACTION_ROW_INV_MAP[dst[1]]
+    return fc + fr + tc + tr
 
 def get_iccs_action_space():
     locs = [c + r for c in ICCS_ACTION_COL_MAP.keys() for r in ICCS_ACTION_ROW_MAP.keys()]

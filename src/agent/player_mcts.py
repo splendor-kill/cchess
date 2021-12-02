@@ -13,7 +13,9 @@ import copy
 
 from agent.helper import flip_policy
 from env import Env
-from player import Player
+from piece import Camp
+from player import Player, infer_action_and_param
+from board import to_iccs_action, parse_action_iccs
 
 logger = getLogger(__name__)
 
@@ -216,7 +218,10 @@ class MCTSPlayer(Player):
             my_stats.w += -virtual_loss
             my_stats.q = my_stats.w / my_stats.n
 
-        env.step(action_t.uci())
+        piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)
+        act, param = infer_action_and_param(piece, dst)
+        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
+        env.step(action)
         leaf_v = self.search_my_move(env)  # next move from enemy POV
         leaf_v = -leaf_v
 
@@ -231,7 +236,7 @@ class MCTSPlayer(Player):
 
         return leaf_v
 
-    def expand_and_evaluate(self, env) -> Tuple[np.ndarray, float]:
+    def expand_and_evaluate(self, env: Env) -> Tuple[np.ndarray, float]:
         """ expand new leaf, this is called only once per state
         this is called with state locked
         insert P(a|s), return leaf_v
@@ -244,8 +249,8 @@ class MCTSPlayer(Player):
         leaf_p, leaf_v = self.predict(state_planes)
         # these are canonical policy and value (i.e. side to move is "white")
 
-        if not env.white_to_move:
-            leaf_p = flip_policy(leaf_p)  # get it back to python-chess form
+        if not env.cur_player == Camp.RED:
+            leaf_p = flip_policy(leaf_p, self.config)  # get it back to python-chess form
 
         return leaf_p, leaf_v
 
@@ -281,7 +286,9 @@ class MCTSPlayer(Player):
 
         if my_visitstats.p is not None:  # push p to edges
             tot_p = 1e-8
-            for mov in env.board.legal_moves:
+            valid_actions = env.board.get_final_valid_actions(env.cur_player)
+            for action in valid_actions:
+                mov = to_iccs_action(action)
                 mov_p = my_visitstats.p[self.move_lookup[mov]]
                 my_visitstats.a[mov].p = mov_p
                 tot_p += mov_p

@@ -103,7 +103,8 @@ class Env:
         import numpy as np
         b = self.board.encode()
         planes = []
-        for c in Camp:
+        order = (Camp.RED, Camp.BLACK) if self.cur_player == Camp.RED else (Camp.BLACK, Camp.RED)
+        for c in order:
             for f in Force:
                 v = c * 10 + f
                 p = (b==v).astype(np.int32)

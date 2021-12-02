@@ -6,6 +6,11 @@ from common.utils import load_cfg
 from config import cfg
 import multiprocessing as mp
 
+def flip_ucci_labels(labels):
+    def repl(x):
+        return "".join([(str(9 - int(a)) if a.isdigit() else a) for a in x])
+    return [repl(x) for x in labels]
+
 
 def play_a_game(opening=None):
     players = {Camp.RED: Human(Camp.RED), Camp.BLACK: Human(Camp.BLACK)}
@@ -77,6 +82,8 @@ if __name__ == '__main__':
     cfg.update(load_cfg(args.config))
     cfg.labels = get_iccs_action_space()
     cfg.n_labels = len(cfg.labels)
+    flipped = flip_ucci_labels(cfg.labels)
+    cfg.unflipped_index = [cfg.labels.index(x) for x in flipped]
     # np.random.seed(0)
     s = time.perf_counter()
 

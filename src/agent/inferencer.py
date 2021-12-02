@@ -68,7 +68,10 @@ class ChessModelAPI:
                     result_pipes.append(pipe)
 
             data = np.asarray(data, dtype=np.float32)
-            logger.debug(f'data shape: {data.shape}')
-            policy_ary, value_ary = self.agent_model.model.predict_on_batch(data)
+            session = self.agent_model.sess
+            graph = self.agent_model.graph
+            with session.as_default():
+                with graph.as_default():
+                    policy_ary, value_ary = self.agent_model.model.predict_on_batch(data)
             for pipe, p, v in zip(result_pipes, policy_ary, value_ary):
                 pipe.send((p, float(v)))

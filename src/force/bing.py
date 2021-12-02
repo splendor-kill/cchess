@@ -24,12 +24,15 @@ class Bing(Piece):
         return row > 4
 
     def get_valid_pos(self, board_):
+        from board import N_COLS, N_ROWS
         test_pos = [(0, 1)]
         if self.is_cross_river():
             test_pos.extend([(1, 0), (-1, 0)])
         poses = []
         for pos in test_pos:
             col, row = self.col + pos[0], self.row + self.heading * pos[1]
+            if not (0 <= col < N_COLS and 0 <= row < N_ROWS):
+                continue
             p = board_.piece_at(col, row)
             if p is None or p.camp != self.camp:
                 if not self.will_cause_shuai_meet(board_, col, row):

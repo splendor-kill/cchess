@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.append('src')
 
-from board import Board, parse_action, Action, parse_action_iccs
+from board import Board, parse_action, Action, parse_action_iccs, to_iccs_action
 from force import *
 from piece import Camp, Force
 
@@ -674,9 +674,19 @@ class ICCSActionTest(unittest.TestCase):
         board = Board(FULL_BOARD)
         cmds = ['b7b0']
         camp = Camp.RED
-        board.get_valid_actions
         for cmd in cmds:
             self.assertRaises(Exception, parse_action_iccs, cmd, camp, board)
+            
+    def test_to_iccs_action(self):
+        from constants import FULL_BOARD
+        board = Board(FULL_BOARD)
+        p = board.piece_at(7, 7)
+        self.assertEqual(Force.PAO, p.force)
+        self.assertEqual(Camp.RED, p.camp)
+        dst = (4, 7)
+        action = {'piece': p, 'dst': dst}
+        a = to_iccs_action(action)
+        self.assertEqual('h2e2', a)
 
 
 if __name__ == '__main__':
