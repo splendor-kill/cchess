@@ -1,18 +1,20 @@
 reword_of_illegal_action: -5
 
+
 opts:
-  new: True
+  new: False
+
 
 evaluate:
   vram_frac: 1.0
   game_num: 50
   replace_rate: 0.55
-  play_config: PlayConfig()
-  play_config.simulation_num_per_move: 200
-  play_config.thinking_loop: 1
-  play_config.c_puct: 1 # lower : prefer mean action value
-  play_config.tau_decay_rate: 0.6 # I need a better distribution...
-  play_config.noise_eps: 0
+  play_config:
+    simulation_num_per_move: 200
+    thinking_loop: 1
+    c_puct: 1 # lower : prefer mean action value
+    tau_decay_rate: 0.6 # I need a better distribution...
+    noise_eps: 0
   evaluate_latest_first: True
   max_game_length: 1000
 
@@ -26,7 +28,7 @@ playdata:
 
 
 play:
-  max_processes: 1
+  max_processes: 7
   search_threads: 4
   vram_frac: 1.0
   simulation_num_per_move: 800
