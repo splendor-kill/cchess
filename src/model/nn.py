@@ -33,8 +33,8 @@ class NNModel:
         self.model = None  # type: Model
         self.digest = None
         self.api = None
-        self.sess = None
         self.graph = None
+        self.session = None
 
     def get_pipes(self, num=1):
         """
@@ -53,13 +53,10 @@ class NNModel:
         """
         Builds the full Keras model and stores it in self.model.
         """
-        
-        sess = tf.Session()
-        graph = tf.get_default_graph()
-        K.set_session(sess)
-        self.sess = sess
-        self.graph = graph
-        
+        self.graph = tf.get_default_graph()
+        self.session = tf.Session(graph=self.graph)
+        K.set_session(self.session)
+
         mc = self.config.model
         in_x = x = Input((14, N_ROWS, N_COLS))
 

@@ -9,6 +9,7 @@ from time import time
 
 from env import Env
 from model.nn import NNModel
+from keras import backend as K
 
 from common.data_helper import get_game_data_filenames, write_game_data_to_file, pretty_print
 from model.helper import load_best_model_weight, save_as_best_model, \
@@ -58,6 +59,8 @@ class SelfPlayWorker:
         if self.config.opts.new or not load_best_model_weight(model):
             model.build()
             save_as_best_model(model)
+        model.session = K.get_session()
+        model.graph = model.session.graph
         return model
 
     def flush_buffer(self):
