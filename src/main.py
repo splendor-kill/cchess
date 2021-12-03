@@ -6,10 +6,21 @@ from common.utils import load_cfg
 from config import cfg
 import multiprocessing as mp
 
+from logging import StreamHandler, basicConfig, DEBUG, getLogger
+
+
 def flip_ucci_labels(labels):
     def repl(x):
         return "".join([(str(9 - int(a)) if a.isdigit() else a) for a in x])
     return [repl(x) for x in labels]
+
+
+def setup_logger(log_filename):
+    format_str = '##### %(processName)-15s %(filename)10s line %(lineno)-5d %(name)10s %(funcName)-10s: %(message)s'
+    # basicConfig(level=DEBUG, format=format_str, stream=sys.stderr)
+    basicConfig(level=DEBUG, format=format_str, filename=log_filename)
+    stream_handler = StreamHandler()
+    getLogger().addHandler(stream_handler)
 
 
 def play_a_game(opening=None):
@@ -69,12 +80,9 @@ if __name__ == '__main__':
     parser.add_argument('--pgn_file', help='demo by pgn')
 
     args = parser.parse_args()
+    cfg.update(load_cfg(args.config))
 
-    logging.basicConfig(
-        level=logging.DEBUG,
-        format='##### %(processName)-15s %(filename)10s line %(lineno)-5d %(name)10s %(funcName)-10s: %(message)s',
-        stream=sys.stderr
-    )
+    setup_logger(cfg.resource.main_log_path)
 
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)

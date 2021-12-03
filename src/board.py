@@ -489,9 +489,26 @@ def to_iccs_action(action: dict):
     tr = ICCS_ACTION_ROW_INV_MAP[dst[1]]
     return fc + fr + tc + tr
 
+
 def get_iccs_action_space():
-    locs = [c + r for c in ICCS_ACTION_COL_MAP.keys() for r in ICCS_ACTION_ROW_MAP.keys()]
-    return [src + dst for src in locs for dst in locs if src != dst]
+    actions = []
+    for i in range(N_ROWS):
+        for j in range(N_COLS):
+            for r in range(N_ROWS):  # at same col
+                if r != i:
+                    actions.append((j, i, j, r))
+            for c in range(N_COLS):  # at same row
+                if c != j:
+                    actions.append((j, i, c, i))
+            for r in (-2, -1, 1, 2):  # in 2 x 2 region
+                for c in (-2, -1, 1, 2):
+                    c_, r_ = j + c, i + r
+                    if 0 <= c_ < N_COLS and 0 <= r_ < N_ROWS:
+                        actions.append((j, i, c_, r_))
+    dc = ICCS_ACTION_COL_INV_MAP
+    dr = ICCS_ACTION_ROW_INV_MAP
+    actions = [f'{dc[j]}{dr[i]}{dc[c]}{dr[r]}' for j, i, c, r in actions]
+    return actions
 
 
 def test():
