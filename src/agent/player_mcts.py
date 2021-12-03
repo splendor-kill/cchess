@@ -124,7 +124,7 @@ class MCTSPlayer(Player):
                   f'q: {s[2]:7.3f} '
                   f'p: {s[3]:7.5f}')
 
-    def make_decision(self, **kwargs) -> str:
+    def make_decision(self, **kwargs):
         """
         Figures out the next best move
         within the specified environment and returns a string describing the action to take.
@@ -157,7 +157,11 @@ class MCTSPlayer(Player):
         else:
             self.moves.append([observation, list(policy)])
             
-            return self.config.labels[my_action]
+            action_t = self.config.labels[my_action]
+            piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)
+            act, param = infer_action_and_param(piece, dst)
+            action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}            
+            return action
 
     def search_moves(self, env) -> Tuple[float, float]:
         """
