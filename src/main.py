@@ -7,12 +7,7 @@ from config import cfg
 import multiprocessing as mp
 
 from logging import StreamHandler, basicConfig, DEBUG, getLogger
-
-
-def flip_ucci_labels(labels):
-    def repl(x):
-        return "".join([(str(9 - int(a)) if a.isdigit() else a) for a in x])
-    return [repl(x) for x in labels]
+from agent.helper import flip_ucci_labels
 
 
 def setup_logger(log_filename):
