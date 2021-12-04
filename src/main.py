@@ -105,6 +105,11 @@ if __name__ == '__main__':
 
         evaluate.start(cfg)
         sys.exit(0)
+    elif args.cmd == 'sl':
+        from worker import sl
+
+        sl.start(cfg)
+        sys.exit(0)
     elif args.cmd == 'demo':
         demo(args.pgn_file)
         sys.exit(0)

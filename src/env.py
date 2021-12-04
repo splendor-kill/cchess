@@ -4,6 +4,7 @@ from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE
 from constants import FULL_BOARD
 from piece import Camp, Force
 
+MAX_GAME_LENGTH = 150
 
 logger = getLogger(__name__)
 
@@ -17,11 +18,13 @@ class Env:
         self.sue_draw = False
         self.done = False
         self.winner = None
+        self.n_steps = 0
 
     def reset(self):
         self.cur_player = Camp.RED
         self.done = False
         self.winner = None
+        self.n_steps = 0
         self.board = Board(self.opening)
         return self._make_observation()
 
@@ -40,6 +43,7 @@ class Env:
         print(self.board)
 
     def step(self, action):
+        self.n_steps += 1
         if action['action'] == Action.RESIGN:
             self.done = True
             self.winner = self.cur_player.opponent()
@@ -79,8 +83,7 @@ class Env:
             self.winner = self.cur_player.opponent()
             return None, REWARD_LOSE, True, None
 
-        done = self.board.test_draw()
-        if done:
+        if self.n_steps >= MAX_GAME_LENGTH or self.board.test_draw():
             self.done = True
             self.winner = None  # means DRAW
             return None, REWARD_DRAW, True, None

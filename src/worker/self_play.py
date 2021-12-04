@@ -44,12 +44,8 @@ class SelfPlayWorker:
                 start_time = time()
                 x = futures.popleft()
                 env, data = x.result()
-                print(f"game {game_idx:3} time={time() - start_time:5.1f}s "
-                      f"halfmoves={env.num_halfmoves:3} {env.winner:12} "
-                      f"{'by resign ' if env.resigned else '          '}")
-
-                self.buffer += data
-                if (game_idx % self.config.play_data.nb_game_in_file) == 0:
+                print(f'game {game_idx:3} time={time() - start_time:5.1f}s n_steps={env.n_steps:3} {str(env.winner):12}, data: {len(data)}') self.buffer += data
+                if (game_idx % self.config.playdata.nb_game_in_file) == 0:
                     self.flush_buffer()
                     reload_best_model_weight_if_changed(self.current_model)
                 futures.append(executor.submit(self_play_buffer, self.config, self.pipes_bundle))  # Keep it going
@@ -80,9 +76,9 @@ class SelfPlayWorker:
         Delete the play data from disk
         """
         files = get_game_data_filenames(self.config.resource)
-        if len(files) < self.config.play_data.max_file_num:
+        if len(files) < self.config.playdata.max_file_num:
             return
-        for i in range(len(files) - self.config.play_data.max_file_num):
+        for i in range(len(files) - self.config.playdata.max_file_num):
             os.remove(files[i])
 
 
@@ -96,9 +92,6 @@ def self_play_buffer(config, pipes_bundle):
         of data to be appended to the SelfPlayWorker.buffer
     """
     pipes_strand = pipes_bundle.pop()  # borrow
-    env = Env()
-    env.reset()
-
     from piece import Camp
     from agent.player_mcts import MCTSPlayer
 

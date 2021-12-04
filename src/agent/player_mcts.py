@@ -83,7 +83,7 @@ class MCTSPlayer(Player):
     """
 
     # dot = False
-    def __init__(self, id_, config, pipes_strand=None, play_config=None, dummy=False):
+    def __init__(self, id_, config, pipes_strand=None, play_config=None):
         super().__init__(id_)
         self.moves = []
 
@@ -93,7 +93,7 @@ class MCTSPlayer(Player):
         self.labels_n = config.n_labels
         self.labels = config.labels
         self.move_lookup = {move: i for move, i in zip(self.labels, range(self.labels_n))}
-        if dummy:
+        if not pipes_strand:
             return
 
         self.pipes_strand = pipes_strand
@@ -138,8 +138,10 @@ class MCTSPlayer(Player):
         valid_actions = kwargs['valid_actions']
         camp = kwargs['next_player']
         board = kwargs['board']
-        observation = kwargs['board_state']
+        # observation = kwargs['board_state']
+        
         env = self.env
+        observation = env.board.board_to_fen1()
         can_stop = True
         n_turns = len(self.moves)
         
