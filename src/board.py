@@ -292,7 +292,7 @@ class Board:
 
         :param piece:
         :param dst:
-        :return: if capture enemy Shuai
+        :return: captured piece
         """
         piece_at_dst = self.piece_at(*dst)
         if not piece.can_move(self, *dst):
@@ -306,9 +306,8 @@ class Board:
                 self.situation.remove(piece_at_dst)
                 print(f'capture the piece {piece_at_dst}')
                 piece.col = dst[0]
-                piece.row = dst[1]
-                if piece_at_dst.force == Force.SHUAI:
-                    return True
+                piece.row = dst[1]                
+                return piece_at_dst
             else:
                 raise ValueError('illegal move')
         if self.test_check(piece.camp):
@@ -316,7 +315,7 @@ class Board:
             display_check()
         if self.checked[piece.camp] and not self.test_check(piece.camp.opponent()):
             self.checked[piece.camp] = False
-        return False
+        return None
 
     def test_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
         col1, row1 = shuai1_pos
@@ -331,7 +330,30 @@ class Board:
         return True
 
     def test_draw(self):
-        # TODO
+        piece_cnt = {Camp.RED: defaultdict(int), Camp.BLACK: defaultdict(int)}
+        for p in self.situation:
+            d = piece_cnt[p.camp]
+            d[p.force] += 1
+        defend = set([Force.XIANG, Force.SHI, Force.SHUAI])
+        if set(piece_cnt[Camp.RED].keys()).issubset(defend) and set(piece_cnt[Camp.BLACK].keys()).issubset(defend):
+            return True
+
+        attack = set([Force.JU, Force.MA, Force.PAO, Force.BING])
+        attack_red = set(piece_cnt[Camp.RED].keys()).intersection(attack)        
+        red_attack_weak = not attack_red or attack_red == set([Force.BING]) and piece_cnt[Camp.RED][Force.BING] <=2 
+        attack_black = set(piece_cnt[Camp.BLACK].keys()).intersection(attack)        
+        black_attack_weak = not attack_black or attack_black == set([Force.BING]) and piece_cnt[Camp.RED][Force.BING] <= 2
+
+        red_defend = set(piece_cnt[Camp.RED].keys()).intersection(defend)
+        red_defend_num = sum([n for k, n in piece_cnt[Camp.RED].items() if k in red_defend])
+        red_defend_strong = red_defend_num >= 4
+        black_defend = set(piece_cnt[Camp.BLACK].keys()).intersection(defend)
+        black_defend_num = sum([n for k, n in piece_cnt[Camp.BLACK].items() if k in black_defend])
+        black_defend_strong = black_defend_num >= 4
+            
+        if red_attack_weak and black_defend_strong and black_attack_weak and red_defend_strong:
+            return True
+
         return False
 
     def test_check(self, attacker):

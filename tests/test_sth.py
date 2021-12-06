@@ -2,9 +2,11 @@ import unittest
 import sys
 sys.path.append('src')
 
-from board import Board
+from board import Board, parse_action
 from force import *
 from piece import Camp
+from env import Env
+from player import infer_action_and_param
 
 
 class ShuaiMeetTest(unittest.TestCase):
@@ -138,6 +140,39 @@ class FinalValidActionsTest(unittest.TestCase):
         board = Board(kaggle_1)
         actions = board.get_valid_actions(Camp.BLACK)
         self.assertEqual(32, len(actions))
+
+
+class ResultDrawTest(unittest.TestCase):
+    def test1(self):
+        situation = '''
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－將－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－砲－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        卒－＋－＋－＋－俥－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        ＋－＋－＋－＋－＋－＋－＋－＋－＋
+        ｜　｜　｜　｜　｜　｜　｜　｜　｜
+        車－＋－＋－＋－＋－＋－馬－＋－相
+        ｜　｜　｜　｜＼｜／｜　｜　｜　｜
+        ＋－＋－＋－＋－仕－炮－＋－＋－＋
+        ｜　｜　｜　｜／｜＼｜　｜　｜　｜
+        ＋－＋－＋－＋－帥－仕－＋－＋－＋
+        '''
+        env = Env(situation)
+        for _ in range(3):
+            cmds = ['仕五退六', '砲3进7', '仕六进五', '砲3退7']
+            for i, cmd in enumerate(cmds):
+                piece, dst = parse_action(cmd, Camp.RED if i % 2 == 0 else Camp.BLACK, env.board)
+                act, param = infer_action_and_param(piece, dst)
+                env.step({'action': act, 'act_param': param, 'piece': piece, 'dst': dst})
+        repeat = Env.does_history_repeat(env.last_n_states)
+        self.assertTrue(repeat)
 
 
 if __name__ == '__main__':
