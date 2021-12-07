@@ -5,6 +5,7 @@ sys.path.append('src')
 from force import *
 from board import Board
 from constants import FULL_BOARD
+from env import Env
 
 
 class ReprFenTest(unittest.TestCase):
@@ -40,3 +41,19 @@ class ReprNumpyArrayTest(unittest.TestCase):
         board = Board(arr)
         arr1 = board.encode()
         self.assertTrue((arr == arr1).all())
+
+
+class EnvFenTest(unittest.TestCase):
+    def test1(self):
+        fen = '9/9/3k5/9/9/9/4R4/3A5/8r/4K4 b - - 0 1'
+        env = Env.from_fen(fen)
+        fen1 = env.to_fen()
+        self.assertEqual(fen, fen1)
+
+    def test2(self):
+        fen = '9/9/3k5/9/9/9/4R4/3A5/4K4/8r b - - 0 1 moves i0i1 e1e0 i1i0 e0e1 i0i1 e1e0 i1i0 e0e1 i0i1 e1e0'
+        env = Env.from_fen(fen)
+        fen1 = env.to_fen()
+        parts = fen1.split()
+        eres = '9/9/3k5/9/9/9/4R4/3A5/8r/4K4'
+        self.assertEqual(eres, parts[0])

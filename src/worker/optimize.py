@@ -10,12 +10,13 @@ from time import sleep
 from random import shuffle
 
 import numpy as np
+from piece import Camp
+from env import Env
+from model.nn import NNModel
+from agent.helper import flip_policy, testeval
 
-from chess_zero.agent.model_chess import ChessModel
-from chess_zero.config import Config
-from chess_zero.env.chess_env import canon_input_planes, is_black_turn, testeval
-from chess_zero.lib.data_helper import get_game_data_filenames, read_game_data_from_file, get_next_generation_model_dirs
-from chess_zero.lib.model_helper import load_best_model_weight
+from common.data_helper import get_game_data_filenames, read_game_data_from_file, get_next_generation_model_dirs
+from model.helper import load_best_model_weight
 
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
@@ -23,7 +24,7 @@ from keras.callbacks import TensorBoard
 logger = getLogger(__name__)
 
 
-def start(config: Config):
+def start(config):
     """
     Helper method which just kicks off the optimization using the specified config
     :param Config config: config to use
@@ -45,9 +46,9 @@ class OptimizeWorker:
         :ivar ProcessPoolExecutor executor: executor for running all of the training processes
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config):
         self.config = config
-        self.model = None  # type: ChessModel
+        self.model = None
         self.dataset = deque(), deque(), deque()
         self.executor = ProcessPoolExecutor(max_workers=config.trainer.cleaning_processes)
 
@@ -86,7 +87,7 @@ class OptimizeWorker:
         """
         tc = self.config.trainer
         state_ary, policy_ary, value_ary = self.collect_all_loaded_data()
-        tensorboard_cb = TensorBoard(log_dir="./logs", batch_size=tc.batch_size, histogram_freq=1)
+        tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
         self.model.model.fit(state_ary, [policy_ary, value_ary],
                              batch_size=tc.batch_size,
                              epochs=epochs,
@@ -154,7 +155,7 @@ class OptimizeWorker:
         Loads the next generation model from the appropriate directory. If not found, loads
         the best known model.
         """
-        model = ChessModel(self.config)
+        model = NNModel(self.config)
         rc = self.config.resource
 
         dirs = get_next_generation_model_dirs(rc)
@@ -185,11 +186,11 @@ def convert_to_cheating_data(data):
     policy_list = []
     value_list = []
     for state_fen, policy, value in data:
+        env = Env(state_fen)
+        state_planes = env.canonical_input_planes()
 
-        state_planes = canon_input_planes(state_fen)
-
-        if is_black_turn(state_fen):
-            policy = Config.flip_policy(policy)
+        if not env.cur_player == Camp.RED:
+            policy = flip_policy(policy)
 
         move_number = int(state_fen.split(' ')[5])
         value_certainty = min(5, move_number) / 5  # reduces the noise of the opening... plz train faster

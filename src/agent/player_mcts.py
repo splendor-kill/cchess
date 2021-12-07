@@ -141,7 +141,7 @@ class MCTSPlayer(Player):
         # observation = kwargs['board_state']
         
         env = self.env
-        observation = env.board.board_to_fen1()
+        fen = env.to_fen()
         can_stop = True
         n_turns = len(self.moves)
         
@@ -157,7 +157,7 @@ class MCTSPlayer(Player):
                 and n_turns > self.play_config.min_resign_turn:
             return {'action': Action.RESIGN}
         else:
-            self.moves.append([observation, list(policy)])
+            self.moves.append([fen, list(policy)])
             
             action_t = self.config.labels[my_action]
             piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)

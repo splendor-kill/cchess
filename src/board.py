@@ -95,7 +95,7 @@ class Board:
     def __init__(self, situation):
         if isinstance(situation, str):
             if '/' in situation:
-                situation = self._parse_fen1(situation)
+                situation = self._parse_fen1(situation.strip().split()[0])
             else:
                 situation = self._parse(situation)
         elif isinstance(situation, np.ndarray):
@@ -220,6 +220,7 @@ class Board:
         return sit
 
     def board_to_fen1(self):
+        """first part of FEN string"""
         b = [[' ' for _ in range(N_COLS)] for _ in range(N_ROWS)]
         for p in self.situation:
             b[p.row][p.col] = piece_2_char_wxf(p.camp, p.force)

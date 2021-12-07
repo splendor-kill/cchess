@@ -30,6 +30,10 @@ class Camp(IntEnum):
         return op[self]
 
 
+CAMP_ALIAS = {Camp.BLACK: 'b', Camp.RED: 'r'}
+CAMP_ALIAS_INV = {v: k for k, v in CAMP_ALIAS.items()}
+
+
 class Force(IntEnum):
     SHUAI = 1
     SHI = 2

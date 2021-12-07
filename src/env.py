@@ -1,10 +1,9 @@
 from logging import getLogger
 
-from numpy import str0
-
-from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE
+from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, parse_action_iccs
 from constants import FULL_BOARD
-from piece import Camp, Force
+from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV
+from player import infer_action_and_param
 
 MAX_GAME_LENGTH = 200
 LOWER_BOUND_SUE_DRAW = 25
@@ -168,3 +167,41 @@ class Env:
                 if not (h0 == h).all():
                     return False
         return True
+
+    @staticmethod
+    def from_fen(fen: str):
+        parts = fen.strip().split()
+        n_parts = len(parts)
+        assert n_parts >= 6
+        opening = parts[0]
+        color = parts[1]
+        assert parts[2] == '-'
+        assert parts[3] == '-'
+        n_steps_since_last_kill = int(parts[4])
+        n_turns = int(parts[5])
+
+        env = Env(opening=opening)
+        env.cur_player = CAMP_ALIAS_INV[color]
+        env.n_steps = 2 * n_turns
+        if n_parts == 6:
+            return env
+
+        assert parts[6] == 'moves'
+        for m in parts[7:]:
+            print(env.to_fen())
+            piece, dst = parse_action_iccs(m, env.cur_player, env.board)
+            act, param = infer_action_and_param(piece, dst)
+            action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
+            env.step(action)
+        print(env.to_fen())
+        return env
+
+    def to_fen(self):
+        parts = []
+        parts.append(self.board.board_to_fen1())
+        parts.append(CAMP_ALIAS[self.cur_player])
+        parts.append('-')
+        parts.append('-')
+        parts.append('0')
+        parts.append(str(self.n_steps // 2))
+        return ' '.join(parts)

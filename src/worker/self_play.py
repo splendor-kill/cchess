@@ -44,7 +44,8 @@ class SelfPlayWorker:
                 start_time = time()
                 x = futures.popleft()
                 env, data = x.result()
-                print(f'game {game_idx:3} time={time() - start_time:5.1f}s n_steps={env.n_steps:3} {str(env.winner):12}, data: {len(data)}') self.buffer += data
+                print(f'game {game_idx:3} time={time() - start_time:5.1f}s n_steps={env.n_steps:3} {str(env.winner):12}, data: {len(data)}')
+                self.buffer += data
                 if (game_idx % self.config.playdata.nb_game_in_file) == 0:
                     self.flush_buffer()
                     reload_best_model_weight_if_changed(self.current_model)

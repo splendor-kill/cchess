@@ -78,13 +78,14 @@ if __name__ == '__main__':
     cfg.update(load_cfg(args.config))
 
     setup_logger(cfg.resource.main_log_path)
-
+    
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)
 
     cfg.update(load_cfg(args.config))
     cfg.labels = get_iccs_action_space()
     cfg.n_labels = len(cfg.labels)
+    print(f'action space size: {cfg.n_labels}')
     flipped = flip_ucci_labels(cfg.labels)
     cfg.unflipped_index = [cfg.labels.index(x) for x in flipped]
     # np.random.seed(0)
