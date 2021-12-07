@@ -65,7 +65,8 @@ class ChessModelAPI:
             data, result_pipes = [], []
             for pipe in ready:
                 while pipe.poll():
-                    data.append(pipe.recv())
+                    ret = pipe.recv()
+                    data.append(ret)
                     result_pipes.append(pipe)
 
             data = np.asarray(data, dtype=np.float32)

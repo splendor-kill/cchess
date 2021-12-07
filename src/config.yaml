@@ -2,36 +2,41 @@ reword_of_illegal_action: -5
 
 
 opts:
-  new: False
+  new: True
 
 
-evaluate:
+eval:
   vram_frac: 1.0
-  game_num: 50
+  game_num: 10
   replace_rate: 0.55
   play_config:
-    simulation_num_per_move: 200
+    max_processes: 3
+    search_threads: 2
+    simulation_num_per_move: 5
     thinking_loop: 1
     c_puct: 1 # lower : prefer mean action value
     tau_decay_rate: 0.6 # I need a better distribution...
     noise_eps: 0
+    dirichlet_alpha: 0.3
+    virtual_loss: 3
+    resign_threshold: -0.8
   evaluate_latest_first: True
-  max_game_length: 1000
+  max_game_length: 150
 
 
 playdata:
   min_elo_policy: 500 # 0 weight
   max_elo_policy: 1800 # 1 weight
-  sl_nb_game_in_file: 250
-  nb_game_in_file: 50
-  max_file_num: 150
+  sl_nb_game_in_file: 10
+  nb_game_in_file: 3
+  max_file_num: 10
 
 
 play:
   max_processes: 7
   search_threads: 4
   vram_frac: 1.0
-  simulation_num_per_move: 800
+  simulation_num_per_move: 4
   thinking_loop: 1
   logging_thinking: False
   c_puct: 1.5
@@ -41,14 +46,14 @@ play:
   virtual_loss: 3
   resign_threshold: -0.8
   min_resign_turn: 5
-  max_game_length: 1000
+  max_game_length: 150
 
 
 trainer:
   min_data_size_to_learn: 0
   cleaning_processes: 5 # RAM explosion...
   vram_frac: 1.0
-  batch_size: 384 # tune this to your gpu memory
+  batch_size: 128 # tune this to your gpu memory
   epoch_to_checkpoint: 1
   dataset_size: 100000
   start_total_steps: 0
@@ -64,7 +69,7 @@ model:
   res_layer_num: 7
   l2_reg: 1e-4
   value_fc_size: 256
-  distributed: True
+  distributed: False
   input_depth: 18
 
 

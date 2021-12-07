@@ -19,7 +19,7 @@ class Env:
         self.cur_player = Camp.RED
         self.sue_draw = False
         self.done = False
-        self.winner = None
+        self.winner: Camp = None
         self.n_steps = 0
         self.last_capture = 0
         self.last_n_states = []

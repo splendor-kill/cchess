@@ -7,18 +7,27 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from logging import getLogger
 from multiprocessing import Manager
 from time import sleep
+from typing import Tuple
 
-from chess_zero.agent.model_chess import ChessModel
-from chess_zero.agent.player_chess import ChessPlayer
-from chess_zero.config import Config
-from chess_zero.env.chess_env import ChessEnv, Winner
-from chess_zero.lib.data_helper import get_next_generation_model_dirs, pretty_print
-from chess_zero.lib.model_helper import save_as_best_model, load_best_model_weight
+import numpy as np
+from keras import backend as K
+from board import REWARD_DRAW
+from piece import Camp
+from env import Env
+from model.nn import NNModel
+
+from agent.player_mcts import MCTSPlayer
+from agent.helper import flip_policy, testeval
+
+from common.data_helper import get_next_generation_model_dirs, pretty_print
+from model.helper import load_best_model_weight, save_as_best_model
+
+
 
 logger = getLogger(__name__)
 
 
-def start(config: Config):
+def start(config):
     return EvaluateWorker(config).start()
 
 
@@ -31,11 +40,11 @@ class EvaluateWorker:
         :ivar PlayConfig config: PlayConfig to use to determine how to play, taken from config.eval.play_config
         :ivar ChessModel current_model: currently chosen best model
         :ivar Manager m: multiprocessing manager
-        :ivar list(Connection) cur_pipes: pipes on which the current best ChessModel is listening which will be used to
+        :ivar list(Connection) pipes_bundle: pipes on which the current best ChessModel is listening which will be used to
             make predictions while playing a game.
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config):
         """
         :param config: Config to use to control how evaluation should work
         """
@@ -43,8 +52,9 @@ class EvaluateWorker:
         self.play_config = config.eval.play_config
         self.current_model = self.load_current_model()
         self.m = Manager()
-        self.cur_pipes = self.m.list([self.current_model.get_pipes(self.play_config.search_threads) for _ in
+        self.pipes_bundle = self.m.list([self.current_model.get_pipes(self.play_config.search_threads) for _ in
                                       range(self.play_config.max_processes)])
+
 
     def start(self):
         """
@@ -74,26 +84,24 @@ class EvaluateWorker:
         futures = []
         with ProcessPoolExecutor(max_workers=self.play_config.max_processes) as executor:
             for game_idx in range(self.config.eval.game_num):
-                fut = executor.submit(play_game, self.config, cur=self.cur_pipes, ng=ng_pipes,
-                                      current_white=(game_idx % 2 == 0))
+                fut = executor.submit(play_game, self.config, cur=self.pipes_bundle, ng=ng_pipes,
+                                      cur_red=(game_idx % 2 == 0))
                 futures.append(fut)
 
             results = []
             for fut in as_completed(futures):
                 # ng_score := if ng_model win -> 1, lose -> 0, draw -> 0.5
-                ng_score, env, current_white = fut.result()
+                ng_score, env, cur_red = fut.result()
                 results.append(ng_score)
                 win_rate = sum(results) / len(results)
                 game_idx = len(results)
-                logger.debug(f"game {game_idx:3}: ng_score={ng_score:.1f} as {'black' if current_white else 'white'} "
-                             f"{'by resign ' if env.resigned else '          '}"
-                             f"win_rate={win_rate * 100:5.1f}% "
-                             f"{env.board.fen().split(' ')[0]}")
+                logger.debug(f"game {game_idx:3}: ng_score={ng_score:.1f} as {'black' if cur_red else 'red'} "
+                             f"win_rate={win_rate * 100:5.1f}% ")
 
                 colors = ("current_model", "ng_model")
-                if not current_white:
+                if not cur_red:
                     colors = reversed(colors)
-                pretty_print(env, colors)
+                # pretty_print(env, colors)
 
                 if len(results) - sum(results) >= self.config.eval.game_num * (1 - self.config.eval.replace_rate):
                     logger.debug(f"lose count reach {results.count(0)} so give up challenge")
@@ -113,7 +121,7 @@ class EvaluateWorker:
         :param file model_dir: directory where model should be moved
         """
         rc = self.config.resource
-        new_dir = os.path.join(rc.next_generation_model_dir, "copies", model_dir.name)
+        new_dir = os.path.join(rc.next_generation_model_dir, "copies", os.path.basename(model_dir))
         os.rename(model_dir, new_dir)
 
     def load_current_model(self):
@@ -121,8 +129,10 @@ class EvaluateWorker:
         Loads the best model from the standard directory.
         :return ChessModel: the model
         """
-        model = ChessModel(self.config)
+        model = NNModel(self.config)
         load_best_model_weight(model)
+        model.session = K.get_session()
+        model.graph = model.session.graph
         return model
 
     def load_next_generation_model(self):
@@ -140,49 +150,55 @@ class EvaluateWorker:
         model_dir = dirs[-1] if self.config.eval.evaluate_latest_first else dirs[0]
         config_path = os.path.join(model_dir, rc.next_generation_model_config_filename)
         weight_path = os.path.join(model_dir, rc.next_generation_model_weight_filename)
-        model = ChessModel(self.config)
+        model = NNModel(self.config)
         model.load(config_path, weight_path)
+        model.session = K.get_session()
+        model.graph = model.session.graph
         return model, model_dir
 
 
-def play_game(config, cur, ng, current_white: bool) -> (float, ChessEnv, bool):
+def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:
     """
     Plays a game against models cur and ng and reports the results.
 
     :param Config config: config for how to play the game
     :param ChessModel cur: should be the current model
     :param ChessModel ng: should be the next generation model
-    :param bool current_white: whether cur should play white or black
+    :param bool cur_red: whether cur should play red or black
     :return (float, ChessEnv, bool): the score for the ng model
         (0 for loss, .5 for draw, 1 for win), the env after the game is finished, and a bool
-        which is true iff cur played as white in that game.
+        which is true iff cur played as red in that game.
     """
     cur_pipes = cur.pop()
     ng_pipes = ng.pop()
-    env = ChessEnv().reset()
 
-    current_player = ChessPlayer(config, pipes=cur_pipes, play_config=config.eval.play_config)
-    ng_player = ChessPlayer(config, pipes=ng_pipes, play_config=config.eval.play_config)
-    if current_white:
-        white, black = current_player, ng_player
-    else:
-        white, black = ng_player, current_player
+    cur_model_camp = Camp.RED if cur_red else Camp.BLACK
+    ng_model_camp = cur_model_camp.opponent()
 
-    while not env.done:
-        if env.white_to_move:
-            action = white.action(env)
-        else:
-            action = black.action(env)
-        env.step(action)
-        if env.num_halfmoves >= config.eval.max_game_length:
-            env.adjudicate()
+    players = {cur_model_camp: MCTSPlayer(cur_model_camp, config, pipes_strand=cur_pipes, play_config=config.eval.play_config),
+               ng_model_camp: MCTSPlayer(ng_model_camp, config, pipes_strand=ng_pipes, play_config=config.eval.play_config)}
+    env = Env()
+    for p in players.values():
+        p.env = env
 
-    if env.winner == Winner.draw:
-        ng_score = 0.5
-    elif env.white_won == current_white:
+    ob = env.reset()
+    while True:
+        # env.render()
+        player = players[ob['next_player']]
+        action = player.make_decision(**ob)
+        ob, reward, done, info = env.step(action)
+        if done:
+            print(f'player {player.id.name}, reward: {reward}')
+            break
+
+    if env.winner == ng_model_camp:
+        ng_score = 1
+    elif env.winner == cur_model_camp:
         ng_score = 0
     else:
-        ng_score = 1
+        ng_score = 0.5
+
     cur.append(cur_pipes)
     ng.append(ng_pipes)
-    return ng_score, env, current_white
+
+    return ng_score, env, cur_red

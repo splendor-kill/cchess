@@ -135,3 +135,4 @@ data/
 *.ipynb
 
 tmp.py
+logs/
