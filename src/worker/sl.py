@@ -11,14 +11,12 @@ from time import time
 from typing import Tuple
 
 from env import Env
-from agent.player_mcts import MCTSPlayer
+from common.pgn_parser_simple import get_games_from_file
 
 
 from common.data_helper import write_game_data_to_file, find_pgn_files
 
 logger = getLogger(__name__)
-
-TAG_REGEX = re.compile(r"^\[([A-Za-z0-9_]+)\s+\"(.*)\"\]\s*$")
 
 
 def start(cfg):
@@ -70,7 +68,7 @@ class SupervisedLearningWorker:
         Loads game data from pgn files
         :return list(chess.pgn.Game): the games
         """
-        files = find_pgn_files(self.config.resource.data_dir + '/pgns')
+        files = find_pgn_files(self.config.resource.pgn_dir)
         print(len(files))
         games = []
         for filename in files:
@@ -102,39 +100,13 @@ class SupervisedLearningWorker:
         self.buffer = []
 
 
-def get_games_from_file(filename):
-    """
-
-    :param str filename: file containing the pgn game data
-    :return list(pgn.Game): chess games in that file
-    """
-    pgn = open(filename, errors='ignore')
-    offsets = []
-    while True:
-        offset = pgn.tell()
-        
-        headers = chess.pgn.read_headers(pgn)
-        if headers is None:
-           break
-
-        offsets.append(offset)
-    n = len(offsets)
-                             
-    print(f"found {n} games")
-    games = []
-    for offset in offsets:
-        pgn.seek(offset)
-        games.append(chess.pgn.read_game(pgn))
-    return games
-
-
 def clip_elo_policy(config, elo):
 	# 0 until min_elo, 1 after max_elo, linear in between
 	return min(1, max(0, elo - config.playdata.min_elo_policy) / (
 				config.playdata.max_elo_policy - config.playdata.min_elo_policy))
 
 
-def get_buffer(config, game) -> Tuple[Env, list]:
+def get_buffer(config, game: dict) -> Tuple[Env, list]:
     """
     Gets data to load into the buffer by playing a game using PGN data.
     :param Config config: config to use to play the game
@@ -142,53 +114,37 @@ def get_buffer(config, game) -> Tuple[Env, list]:
     :return list(str,list(float)): data from this game for the SupervisedLearningWorker.buffer
     """
     from piece import Camp
-    from agent.player_mcts import MCTSPlayer
-
-    players = {Camp.RED: MCTSPlayer(Camp.RED, config),
-               Camp.BLACK: MCTSPlayer(Camp.BLACK, config)}
+    from player import Playbook
+    
+    result = game['Result']
+    moves = game['moves']
+    red_elo, black_elo = int(game.get('RedElo', 100)), int(game.get('BlackElo', 100))
+    red_weight = clip_elo_policy(config, red_elo)
+    black_weight = clip_elo_policy(config, black_elo)
+    
+    players = {Camp.RED: Playbook(Camp.RED, moves[::2], result), Camp.BLACK: Playbook(Camp.BLACK, moves[1::2], result)}
     env = Env()
     for p in players.values():
         p.env = env
 
     ob = env.reset()
-    
-    result = game.headers["Result"]
-    white_elo, black_elo = int(game.headers["RedElo"]), int(game.headers["BlackElo"])
-    white_weight = clip_elo_policy(config, white_elo)
-    black_weight = clip_elo_policy(config, black_elo)
-    
-    actions = []
-    while not game.is_end():
-        game = game.variation(0)
-        actions.append(game.move.uci())
-    k = 0
-    while not env.done and k < len(actions):
-        if env.white_to_move:
-            action = white.sl_action(env.observation, actions[k], weight=white_weight) #ignore=True
-        else:
-            action = black.sl_action(env.observation, actions[k], weight=black_weight) #ignore=True
-        env.step(action, False)
-        k += 1
+    while True:
+        player = players[ob['next_player']]
+        action = player.make_decision(**ob)
+        ob, reward, done, info = env.step(action)
+        if done:
+            print(f'player {player.id.name}, reward: {reward}')
+            break
 
-    if not env.board.is_game_over() and result != '1/2-1/2':
-        env.resigned = True
-    if result == '1-0':
-        env.winner = Winner.white
-        black_win = -1
-    elif result == '0-1':
-        env.winner = Winner.black
-        black_win = 1
-    else:
-        env.winner = Winner.draw
-        black_win = 0
-
-    black.finish_game(black_win)
-    white.finish_game(-black_win)
+    player = players[env.cur_player]
+    player.finish_game(reward)
+    oppo = players[env.cur_player.opponent()]
+    oppo.finish_game(-reward)
 
     data = []
-    for i in range(len(white.moves)):
-        data.append(white.moves[i])
-        if i < len(black.moves):
-            data.append(black.moves[i])
+    for i in range(len(player.moves)):
+        data.append(player.moves[i])
+        if i < len(oppo.moves):
+            data.append(oppo.moves[i])
 
     return env, data

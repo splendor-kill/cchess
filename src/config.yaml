@@ -28,15 +28,15 @@ playdata:
   min_elo_policy: 500 # 0 weight
   max_elo_policy: 1800 # 1 weight
   sl_nb_game_in_file: 10
-  nb_game_in_file: 3
-  max_file_num: 10
+  nb_game_in_file: 100
+  max_file_num: 100
 
 
 play:
   max_processes: 7
-  search_threads: 4
+  search_threads: 16
   vram_frac: 1.0
-  simulation_num_per_move: 4
+  simulation_num_per_move: 800
   thinking_loop: 1
   logging_thinking: False
   c_puct: 1.5
@@ -46,7 +46,7 @@ play:
   virtual_loss: 3
   resign_threshold: -0.8
   min_resign_turn: 5
-  max_game_length: 150
+  max_game_length: 200
 
 
 trainer:
@@ -76,6 +76,7 @@ model:
 resource:
   project_dir: "./"
   data_dir: "./data"
+  pgn_dir: "./data/cleaned_pgns"
   model_dir: "./data/model"
   model_best_config_path: "./data/model/model_best_config.json"
   model_best_weight_path: "./data/model/model_best_weight.h5"

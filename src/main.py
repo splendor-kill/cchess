@@ -71,7 +71,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=str, default='config.yaml')
     parser.add_argument('--human_color', default='red', choices=['red', 'black'], type=str)
-    parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval', 'demo'])
+    parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval', 'sl', 'demo'])
     parser.add_argument('--pgn_file', help='demo by pgn')
 
     args = parser.parse_args()
