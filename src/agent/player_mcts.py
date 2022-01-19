@@ -160,7 +160,10 @@ class MCTSPlayer(Player):
             self.moves.append([fen, list(policy)])
             
             action_t = self.config.labels[my_action]
-            piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)
+            piece, dst = parse_action_iccs(action_t, env.board)
+            if piece.camp != env.cur_player:
+                print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
+                raise ValueError("cannot play opponent's piece")
             act, param = infer_action_and_param(piece, dst)
             action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}            
             return action
@@ -224,7 +227,10 @@ class MCTSPlayer(Player):
             my_stats.w += -virtual_loss
             my_stats.q = my_stats.w / my_stats.n
 
-        piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)
+        piece, dst = parse_action_iccs(action_t, env.board)
+        if piece.camp != env.cur_player:
+            print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
+            return -1
         act, param = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
         ob, reward, done, info = env.step(action)

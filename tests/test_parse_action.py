@@ -661,7 +661,7 @@ class ICCSActionTest(unittest.TestCase):
 
         for cmd, force, src, dst in zip(cmds, ans_forces, ans_srcs, ans_dsts):
             p = board.piece_at(*src)
-            piece, dst1 = parse_action_iccs(cmd, camp, board)
+            piece, dst1 = parse_action_iccs(cmd, board)
             self.assertTrue(piece is p)
             self.assertEqual(camp, p.camp)
             self.assertEqual(force, p.force)

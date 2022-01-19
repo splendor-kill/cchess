@@ -200,7 +200,10 @@ class Env:
         assert parts[6] == 'moves'
         for m in parts[7:]:
             print(env.to_fen())
-            piece, dst = parse_action_iccs(m, env.cur_player, env.board)
+            piece, dst = parse_action_iccs(m, env.board)
+            if piece.camp != env.cur_player:
+                print(f'player {env.cur_player.name} want do action {m}, but {piece} is not own by him')
+                break
             act, param = infer_action_and_param(piece, dst)
             action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
             env.step(action)
