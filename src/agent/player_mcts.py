@@ -227,7 +227,9 @@ class MCTSPlayer(Player):
         piece, dst = parse_action_iccs(action_t, env.cur_player, env.board)
         act, param = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
-        env.step(action)
+        ob, reward, done, info = env.step(action)
+        if done:
+            return reward
         leaf_v = self.search_my_move(env)  # next move from enemy POV
         leaf_v = -leaf_v
 

@@ -77,17 +77,22 @@ class Env:
             else:
                 self.sue_draw = True  # propose
 
+            if self._opponent_no_way_out():
+                self.done = True
+                self.winner = self.cur_player
+                return None, REWARD_WIN, True, None
+
             self._switch_player()
             ob = self._make_observation()
             self._record_state(ob['board_state'])
-            if len(ob['valid_actions']) == 0:
-                self.done = True
-                self.winner = self.cur_player.opponent()
-                return ob, REWARD_WIN, True, None  # note: no way out, opponent win
+            assert len(ob['valid_actions']) != 0
             return ob, None, False, None
                 
         piece = action['piece']
         dst = action['dst']
+        if piece.camp != self.cur_player:  # move opponent's piece
+            print('bad idea!')
+            return None, REWARD_LOSE, True, None
 
         try:
             captured = self.board.make_move(piece, dst)
@@ -108,13 +113,15 @@ class Env:
             self.winner = None  # means DRAW
             return None, REWARD_DRAW, True, None
 
+        if self._opponent_no_way_out():
+            self.done = True
+            self.winner = self.cur_player
+            return None, REWARD_WIN, True, None
+
         self._switch_player()
         ob = self._make_observation()
         self._record_state(ob['board_state'])
-        if len(ob['valid_actions']) == 0:
-            self.done = True
-            self.winner = self.cur_player.opponent()
-            return ob, REWARD_WIN, True, None  # note: no way out, opponent win
+        assert len(ob['valid_actions']) != 0
         return ob, None, False, None
 
     def close(self):
@@ -155,6 +162,10 @@ class Env:
         self.last_n_states.append(state)
         if len(self.last_n_states) > N_STATES_TO_TEST_DRAW:
             self.last_n_states.pop(0)
+
+    def _opponent_no_way_out(self):
+        valid_actions = self.board.get_final_valid_actions(self.cur_player.opponent())
+        return len(valid_actions) == 0
 
     @staticmethod
     def does_history_repeat(history):

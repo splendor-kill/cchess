@@ -492,7 +492,13 @@ def parse_action_iccs(cmd: str, camp: Camp, board: Board):
     piece = board.piece_at(src[0], src[1])
     if piece is None:
         raise ValueError('piece not found')
-    assert piece.camp == camp    
+    try:
+        assert piece.camp == camp
+    except AssertionError as e:
+        print(f'player {camp.name} want do action {cmd}, but {piece} is not own by him')
+        print(board)
+        raise e
+        
     return piece, dst
 
 
