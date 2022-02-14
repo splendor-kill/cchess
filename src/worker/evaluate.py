@@ -98,9 +98,9 @@ class EvaluateWorker:
                 logger.debug(f"game {game_idx:3}: ng_score={ng_score:.1f} as {'black' if cur_red else 'red'} "
                              f"win_rate={win_rate * 100:5.1f}% ")
 
-                colors = ("current_model", "ng_model")
-                if not cur_red:
-                    colors = reversed(colors)
+                # colors = ("current_model", "ng_model")
+                # if not cur_red:
+                #     colors = reversed(colors)
                 # pretty_print(env, colors)
 
                 if len(results) - sum(results) >= self.config.eval.game_num * (1 - self.config.eval.replace_rate):

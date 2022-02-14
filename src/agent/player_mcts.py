@@ -195,7 +195,7 @@ class MCTSPlayer(Player):
         This method searches for possible moves, adds them to a search tree, and eventually returns the
         best move that was found during the search.
 
-        :param ChessEnv env: environment in which to search for the move
+        :param env: environment in which to search for the move
         :param boolean is_root_node: whether this is the root node of the search.
         :return float: value of the move. This is calculated by getting a prediction
             from the value network.
@@ -203,7 +203,6 @@ class MCTSPlayer(Player):
         if env.done:
             if env.winner is None:  # means DRAW
                 return 0
-            # assert env.whitewon != env.white_to_move # side to move can't be winner!
             return -1
 
         state = state_key(env)
