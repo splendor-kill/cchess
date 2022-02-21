@@ -55,11 +55,11 @@ class Env:
 
     def step(self, action):
         self.n_steps += 1
-        if action['action'] == Action.RESIGN:
+        if 'action' in action and action['action'] == Action.RESIGN:
             self.done = True
             self.winner = self.cur_player.opponent()
             return None, REWARD_LOSE, True, None
-        if action['action'] == Action.SUE_DRAW:
+        if 'action' in action and action['action'] == Action.SUE_DRAW:
             if self.n_steps <= LOWER_BOUND_SUE_DRAW:
                 self.done = True
                 self.winner = self.cur_player.opponent()
@@ -142,7 +142,7 @@ class Env:
                 planes.append(p)
         # TODO: add history
         planes = np.stack(planes, axis=0)
-        logger.info(f'input shape: {planes.shape}')
+        logger.debug(f'input shape: {planes.shape}')
         return planes
     
     def test_draw(self):
