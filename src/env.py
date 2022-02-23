@@ -39,14 +39,15 @@ class Env:
         self._record_state(ob['board_state'])
         return ob
 
-    def _make_observation(self):
-        state = self.board.observe()        
+    def _make_observation(self, captured=None):
+        state = self.board.observe()
         valid_actions = self.board.get_final_valid_actions(self.cur_player)
         ob = {'next_player': self.cur_player,
               'board_state': state,
               'valid_actions': valid_actions,
               'board': self.board,
-              'sue_draw': self.sue_draw
+              'sue_draw': self.sue_draw,
+              'captured': captured
               }
         return ob
 
@@ -63,7 +64,7 @@ class Env:
             if self.n_steps <= LOWER_BOUND_SUE_DRAW:
                 self.done = True
                 self.winner = self.cur_player.opponent()
-                info = f"sue for peace only after {LOWER_BOUND_SUE_DRAW} turns"
+                info = f'sue for peace only after {LOWER_BOUND_SUE_DRAW} turns'
                 return None, REWARD_LOSE, True, info
                 
             if self.sue_draw:
@@ -90,9 +91,9 @@ class Env:
                 
         piece = action['piece']
         dst = action['dst']
-        if piece.camp != self.cur_player:  # move opponent's piece
-            print('bad idea!')
-            return None, REWARD_LOSE, True, None
+        if piece.camp != self.cur_player:
+            info = "illegal move, you can't move opponent's piece"
+            return None, REWARD_LOSE, True, info
 
         try:
             captured = self.board.make_move(piece, dst)
@@ -119,7 +120,7 @@ class Env:
             return None, REWARD_WIN, True, None
 
         self._switch_player()
-        ob = self._make_observation()
+        ob = self._make_observation(captured)
         self._record_state(ob['board_state'])
         assert len(ob['valid_actions']) != 0
         return ob, None, False, None

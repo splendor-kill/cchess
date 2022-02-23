@@ -299,7 +299,7 @@ class Board:
         if not piece.can_move(self, *dst):
             raise ValueError('cannot do this')
 
-        captured_piece = None
+        captured = None
         if piece_at_dst is None:  # just move
             piece.col = dst[0]
             piece.row = dst[1]
@@ -309,7 +309,7 @@ class Board:
                 print(f'capture the piece {piece_at_dst}')
                 piece.col = dst[0]
                 piece.row = dst[1]                
-                captured_piece = piece_at_dst
+                captured = piece_at_dst
             else:
                 raise ValueError('illegal move')
         if self.test_check(piece.camp):
@@ -317,7 +317,7 @@ class Board:
             display_check()
         if self.checked[piece.camp] and not self.test_check(piece.camp.opponent()):
             self.checked[piece.camp] = False
-        return captured_piece
+        return captured
 
     def test_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
         col1, row1 = shuai1_pos
