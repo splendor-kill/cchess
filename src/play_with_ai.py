@@ -94,11 +94,10 @@ if __name__ == '__main__':
     # np.random.seed(0)
     s = time.perf_counter()
 
-    n = 1
     camp = Camp.RED if args.human_color == 'red' else Camp.BLACK
     nn_model_config_path = cfg.resource.model_best_config_path if not args.nn_model_config_path else args.nn_model_config_path
     nn_model_weight_path = cfg.resource.model_best_weight_path if not args.nn_model_weight_path else args.nn_model_weight_path
     play_a_game(cfg, camp, nn_model_config_path, nn_model_weight_path)
 
     elapsed = time.perf_counter() - s
-    print(f'play {n} games spent {elapsed} seconds in total, mean time: {elapsed / n}')
+    print(f'spent {elapsed} seconds in total')
