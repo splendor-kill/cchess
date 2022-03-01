@@ -50,7 +50,7 @@ def play_a_game(config, with_camp: Camp, nn_model_config_path, nn_model_weight_p
     ob = env.reset()
     while True:
         env.render()
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:

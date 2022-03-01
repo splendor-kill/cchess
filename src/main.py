@@ -27,7 +27,7 @@ def play_a_game(opening=None):
     ob = env.reset()
     while True:
         env.render()
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:
@@ -49,7 +49,7 @@ def demo(pgn):
     ob = env.reset()
     while True:
         env.render()
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:

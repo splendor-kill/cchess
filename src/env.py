@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, parse_action_iccs
+from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, REWARD_ILLEGAL, parse_action_iccs
 from constants import FULL_BOARD
 from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV
 from player import infer_action_and_param
@@ -42,11 +42,11 @@ class Env:
     def _make_observation(self, captured=None):
         state = self.board.observe()
         valid_actions = self.board.get_final_valid_actions(self.cur_player)
-        ob = {'next_player': self.cur_player,
+        ob = {'cur_player': self.cur_player,
               'board_state': state,
               'valid_actions': valid_actions,
-              'board': self.board,
               'sue_draw': self.sue_draw,
+              'board': self.board,
               'captured': captured
               }
         return ob
@@ -65,7 +65,7 @@ class Env:
                 self.done = True
                 self.winner = self.cur_player.opponent()
                 info = f'sue for peace only after {LOWER_BOUND_SUE_DRAW} turns'
-                return None, REWARD_LOSE, True, info
+                return None, REWARD_ILLEGAL, True, info
                 
             if self.sue_draw:
                 assert 'act_param' in action
@@ -88,12 +88,12 @@ class Env:
             self._record_state(ob['board_state'])
             assert len(ob['valid_actions']) != 0
             return ob, None, False, None
-                
+
         piece = action['piece']
         dst = action['dst']
         if piece.camp != self.cur_player:
             info = "illegal move, you can't move opponent's piece"
-            return None, REWARD_LOSE, True, info
+            return None, REWARD_ILLEGAL, True, info
 
         try:
             captured = self.board.make_move(piece, dst)
@@ -107,7 +107,7 @@ class Env:
             logger.info(repr(e))
             self.done = True
             self.winner = self.cur_player.opponent()
-            return None, REWARD_LOSE, True, None
+            return None, REWARD_ILLEGAL, True, None
 
         if self.test_draw():
             self.done = True

@@ -136,7 +136,7 @@ class MCTSPlayer(Player):
         """
         from board import Board, Action
         valid_actions = kwargs['valid_actions']
-        camp = kwargs['next_player']
+        camp = kwargs['cur_player']
         board = kwargs['board']
         # observation = kwargs['board_state']
         

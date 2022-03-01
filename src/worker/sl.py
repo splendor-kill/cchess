@@ -129,7 +129,7 @@ def get_buffer(config, game: dict) -> Tuple[Env, list]:
 
     ob = env.reset()
     while True:
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:

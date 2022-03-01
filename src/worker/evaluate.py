@@ -184,7 +184,7 @@ def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:
     ob = env.reset()
     while True:
         # env.render()
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:

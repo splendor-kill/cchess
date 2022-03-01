@@ -105,7 +105,7 @@ def self_play_buffer(config, pipes_bundle):
     ob = env.reset()
     while True:
         # env.render()
-        player = players[ob['next_player']]
+        player = players[ob['cur_player']]
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:

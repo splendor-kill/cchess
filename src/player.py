@@ -34,7 +34,7 @@ class Human(Player):
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
-        camp = kwargs['next_player']
+        camp = kwargs['cur_player']
         board = kwargs['board']
         if len(valid_actions) == 0:
             return {'action': Action.RESIGN}
@@ -104,7 +104,9 @@ class Human(Player):
         piece, dst = parse_action(directive, camp, board)
         if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
             raise ValueError('illegal move')
-        return {'piece': piece, 'dst': dst}
+        act, param = infer_action_and_param(piece, dst)
+        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
+        return action
 
 
 def infer_action_and_param(piece, dst):
@@ -153,7 +155,7 @@ class Playbook(Player):
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
-        camp = kwargs['next_player']
+        camp = kwargs['cur_player']
         board = kwargs['board']
         if len(valid_actions) == 0:
             return {'action': Action.RESIGN}
@@ -172,4 +174,6 @@ class Playbook(Player):
         piece, dst = parse_action(move, camp, board)
         if {'piece': piece, 'dst': dst} not in valid_actions:
             raise ValueError('illegal move')
-        return {'piece': piece, 'dst': dst}
+        act, param = infer_action_and_param(piece, dst)
+        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
+        return action

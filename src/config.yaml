@@ -1,6 +1,3 @@
-reword_of_illegal_action: -5
-
-
 opts:
   new: True
 
@@ -10,9 +7,9 @@ eval:
   game_num: 10
   replace_rate: 0.55
   play_config:
-    max_processes: 3
-    search_threads: 2
-    simulation_num_per_move: 200
+    max_processes: 4
+    search_threads: 8
+    simulation_num_per_move: 400
     thinking_loop: 1
     c_puct: 1 # lower : prefer mean action value
     tau_decay_rate: 0.6 # I need a better distribution...
