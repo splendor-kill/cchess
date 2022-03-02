@@ -16,9 +16,7 @@ PIECE_CHARS = '將士象馬車砲卒帥仕相傌俥炮兵'
 PIECE_CHARS_WXF = 'kabnrcpKABNRCP'
 PLACE_CHARS = '＋Ｘ'
 
-
-def display_check():
-    print(APPEAR_CHECK + '将！！！' + ENDC)
+POINT_OUT_CHECK = APPEAR_CHECK + '将！！！' + ENDC
 
 
 class Camp(IntEnum):
@@ -73,9 +71,11 @@ def piece_2_char(camp: Camp, force: Force):
     index = 7 * (camp.value - 1) + force.value - 1
     return PIECE_CHARS[index]
 
+
 def piece_2_char_wxf(camp: Camp, force: Force):
     index = 7 * (camp.value - 1) + force.value - 1
     return PIECE_CHARS_WXF[index]
+
 
 def recog_piece(piece: str):
     assert piece in PIECE_CHARS

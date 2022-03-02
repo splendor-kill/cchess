@@ -299,7 +299,7 @@ class Board:
 
         :param piece:
         :param dst:
-        :return: captured piece
+        :return: captured piece, check
         """
         piece_at_dst = self.piece_at(*dst)
         if not piece.can_move(self, *dst):
@@ -312,18 +312,18 @@ class Board:
         else:
             if piece_at_dst.camp != piece.camp:
                 self.situation.remove(piece_at_dst)
-                print(f'capture the piece {piece_at_dst}')
                 piece.col = dst[0]
                 piece.row = dst[1]                
                 captured = piece_at_dst
             else:
                 raise ValueError('illegal move')
+        check = False
         if self.test_check(piece.camp):
             self.checked[piece.camp.opponent()] = True
-            display_check()
+            check = True
         if self.checked[piece.camp] and not self.test_check(piece.camp.opponent()):
             self.checked[piece.camp] = False
-        return captured
+        return captured, check
 
     def test_shuai_meet(self, shuai1_pos, shuai2_pos, ignore_piece=None):
         col1, row1 = shuai1_pos

@@ -2,7 +2,7 @@ from logging import getLogger
 
 from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, REWARD_ILLEGAL, parse_action_iccs
 from constants import FULL_BOARD
-from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV
+from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV, POINT_OUT_CHECK
 from player import infer_action_and_param
 
 MAX_GAME_LENGTH = 200
@@ -24,6 +24,7 @@ class Env:
         self.last_capture = 0
         self.last_n_states = []
         self.stats = {}
+        self.step_msgs = []
 
     def reset(self):
         self.cur_player = Camp.RED
@@ -52,6 +53,9 @@ class Env:
         return ob
 
     def render(self):
+        for msg in self.step_msgs:
+            print(msg)
+        self.step_msgs.clear()
         print(self.board)
 
     def step(self, action):
@@ -103,8 +107,11 @@ class Env:
             return None, REWARD_ILLEGAL, True, info
 
         try:
-            captured = self.board.make_move(piece, dst)
+            captured, check = self.board.make_move(piece, dst)
+            if check:
+                self.step_msgs.append(POINT_OUT_CHECK)
             if captured is not None:
+                self.step_msgs.append(f'capture the piece {captured}')
                 self.last_capture = self.n_steps
                 if captured.force == Force.SHUAI:
                     self.done = True
