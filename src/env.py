@@ -60,8 +60,13 @@ class Env:
             self.done = True
             self.winner = self.cur_player.opponent()
             return None, REWARD_LOSE, True, None
+        if self.sue_draw and not ('action' in action and action['action'] == Action.SUE_DRAW):
+            self.done = True
+            self.winner = self.cur_player.opponent()
+            info = f'must response to the sue-for-peace by opponent'
+            return None, REWARD_ILLEGAL, True, info
         if 'action' in action and action['action'] == Action.SUE_DRAW:
-            if self.n_steps <= LOWER_BOUND_SUE_DRAW:
+            if self.n_steps <= LOWER_BOUND_SUE_DRAW and not self.sue_draw:  # active sue for peace rule
                 self.done = True
                 self.winner = self.cur_player.opponent()
                 info = f'sue for peace only after {LOWER_BOUND_SUE_DRAW} turns'
@@ -92,6 +97,8 @@ class Env:
         piece = action['piece']
         dst = action['dst']
         if piece.camp != self.cur_player:
+            self.done = True
+            self.winner = self.cur_player.opponent()
             info = "illegal move, you can't move opponent's piece"
             return None, REWARD_ILLEGAL, True, info
 

@@ -125,6 +125,12 @@ class Board:
         return valid_actions
 
     def get_final_valid_actions(self, camp: Camp):
+        """ a action is valid:
+        1. must not ignore check by opponent
+        2. must not to be checked actively
+        :param camp:
+        :return: list of action
+        """
         valid_actions = self.get_valid_actions(camp)
         real_actions = []
         for a in valid_actions:
