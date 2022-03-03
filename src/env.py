@@ -3,7 +3,7 @@ from logging import getLogger
 from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, REWARD_ILLEGAL, parse_action_iccs
 from constants import FULL_BOARD
 from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV, POINT_OUT_CHECK
-from player import infer_action_and_param
+from board import infer_action_and_param
 
 MAX_GAME_LENGTH = 200
 LOWER_BOUND_SUE_DRAW = 25
@@ -44,7 +44,7 @@ class Env:
         state = self.board.observe()
         valid_actions = self.board.get_final_valid_actions(self.cur_player)
         ob = {'cur_player': self.cur_player,
-              'board_state': state,
+              'board_state': self.to_fen(),
               'valid_actions': valid_actions,
               'sue_draw': self.sue_draw,
               'board': self.board,
@@ -53,8 +53,7 @@ class Env:
         return ob
 
     def render(self):
-        for msg in self.step_msgs:
-            print(msg)
+        print('\n'.join(self.step_msgs))
         self.step_msgs.clear()
         print(self.board)
 
@@ -75,7 +74,7 @@ class Env:
                 self.winner = self.cur_player.opponent()
                 info = f'sue for peace only after {LOWER_BOUND_SUE_DRAW} turns'
                 return None, REWARD_ILLEGAL, True, info
-                
+
             if self.sue_draw:
                 assert 'act_param' in action
                 if action['act_param']:  # two camps agree with draw
@@ -153,13 +152,13 @@ class Env:
         for c in order:
             for f in Force:
                 v = c * 10 + f
-                p = (b==v).astype(np.int32)
+                p = (b == v).astype(np.int32)
                 planes.append(p)
         # TODO: add history
         planes = np.stack(planes, axis=0)
         logger.debug(f'input shape: {planes.shape}')
         return planes
-    
+
     def test_draw(self):
         if self.n_steps > MAX_GAME_LENGTH:
             return True
@@ -188,9 +187,9 @@ class Env:
             return False
         for i in range(4):
             hs = history[i::4]
-            h0 = hs[0]
+            h0 = hs[0].split()[0]
             for h in hs[1:]:
-                if not (h0 == h).all():
+                if h.split()[0] != h0:
                     return False
         return True
 
@@ -219,18 +218,18 @@ class Env:
             if piece.camp != env.cur_player:
                 print(f'player {env.cur_player.name} want do action {m}, but {piece} is not own by him')
                 break
-            act, param = infer_action_and_param(piece, dst)
+            act, param, _ = infer_action_and_param(piece, dst)
             action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
             env.step(action)
         print(env.to_fen())
         return env
 
     def to_fen(self):
-        parts = []
-        parts.append(self.board.board_to_fen1())
-        parts.append(CAMP_ALIAS[self.cur_player])
-        parts.append('-')
-        parts.append('-')
-        parts.append('0')
-        parts.append(str(self.n_steps // 2))
+        parts = [
+            self.board.board_to_fen1(),
+            CAMP_ALIAS[self.cur_player],
+            '-',
+            '-',
+            '0',
+            str(self.n_steps // 2)]
         return ' '.join(parts)

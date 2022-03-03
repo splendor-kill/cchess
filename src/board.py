@@ -69,6 +69,7 @@ ICCS_ACTION_ROW_MAP = {str(i): N_ROWS - 1 - i for i in range(N_ROWS)}
 ICCS_ACTION_COL_INV_MAP = {v: k for k, v in ICCS_ACTION_COL_MAP.items()}
 ICCS_ACTION_ROW_INV_MAP = {v: k for k, v in ICCS_ACTION_ROW_MAP.items()}
 
+
 def toggle_view(col=None, row=None):
     col = N_COLS - 1 - col if col is not None else None
     row = N_ROWS - 1 - row if row is not None else None
@@ -313,7 +314,7 @@ class Board:
             if piece_at_dst.camp != piece.camp:
                 self.situation.remove(piece_at_dst)
                 piece.col = dst[0]
-                piece.row = dst[1]                
+                piece.row = dst[1]
                 captured = piece_at_dst
             else:
                 raise ValueError('illegal move')
@@ -347,10 +348,11 @@ class Board:
             return True
 
         attack = set([Force.JU, Force.MA, Force.PAO, Force.BING])
-        attack_red = set(piece_cnt[Camp.RED].keys()).intersection(attack)        
-        red_attack_weak = not attack_red or attack_red == set([Force.BING]) and piece_cnt[Camp.RED][Force.BING] <=2 
-        attack_black = set(piece_cnt[Camp.BLACK].keys()).intersection(attack)        
-        black_attack_weak = not attack_black or attack_black == set([Force.BING]) and piece_cnt[Camp.RED][Force.BING] <= 2
+        attack_red = set(piece_cnt[Camp.RED].keys()).intersection(attack)
+        red_attack_weak = not attack_red or attack_red == set([Force.BING]) and piece_cnt[Camp.RED][Force.BING] <= 2
+        attack_black = set(piece_cnt[Camp.BLACK].keys()).intersection(attack)
+        black_attack_weak = not attack_black or attack_black == set([Force.BING]) and piece_cnt[Camp.RED][
+            Force.BING] <= 2
 
         red_defend = set(piece_cnt[Camp.RED].keys()).intersection(defend)
         red_defend_num = sum([n for k, n in piece_cnt[Camp.RED].items() if k in red_defend])
@@ -358,7 +360,7 @@ class Board:
         black_defend = set(piece_cnt[Camp.BLACK].keys()).intersection(defend)
         black_defend_num = sum([n for k, n in piece_cnt[Camp.BLACK].items() if k in black_defend])
         black_defend_strong = black_defend_num >= 4
-            
+
         if red_attack_weak and black_defend_strong and black_attack_weak and red_defend_strong:
             return True
 
@@ -468,6 +470,28 @@ def parse_action(cmd: str, camp: Camp, board: Board):
     dst = piece.calc_dst(action, act_param)
 
     return piece, dst
+
+
+def infer_action_and_param(piece, dst):
+    param_must_be_col = {Force.MA, Force.XIANG, Force.SHI}
+    col, row = piece.with_my_view()
+    dst_col, dst_row = piece.with_my_view(*dst)
+    if dst_row == row:
+        return Action.TRAVERSE, dst_col, True
+    if dst_row < row:
+        if piece.force in param_must_be_col:
+            return Action.RETREAT, dst_col, True
+        return Action.RETREAT, row - dst_row, False
+    if dst_row > row:
+        if piece.force in param_must_be_col:
+            return Action.RETREAT, dst_col, True
+        return Action.ADVANCE, dst_row - row, False
+
+
+def to_chinese_action(piece, dst):
+    act, param, is_col = infer_action_and_param(piece, dst)
+    s = f'{piece}{piece.col + 1}{ACTION_ALIAS[act]}{param + 1 if is_col else param}'
+    return s
 
 
 def parse_action_iccs(cmd: str, board: Board):

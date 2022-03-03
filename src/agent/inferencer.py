@@ -65,7 +65,11 @@ class ChessModelAPI:
             data, result_pipes = [], []
             for pipe in ready:
                 while pipe.poll():
-                    ret = pipe.recv()
+                    try:
+                        ret = pipe.recv()
+                    except EOFError as e:
+                        print(e)
+                        return
                     data.append(ret)
                     result_pipes.append(pipe)
 

@@ -14,8 +14,8 @@ import copy
 from agent.helper import flip_policy
 from env import Env
 from piece import Camp
-from player import Player, infer_action_and_param
-from board import to_iccs_action, parse_action_iccs
+from player import Player
+from board import to_iccs_action, parse_action_iccs, REWARD_ILLEGAL, to_chinese_action, infer_action_and_param
 
 logger = getLogger(__name__)
 
@@ -138,10 +138,8 @@ class MCTSPlayer(Player):
         valid_actions = kwargs['valid_actions']
         camp = kwargs['cur_player']
         board = kwargs['board']
-        # observation = kwargs['board_state']
-        
-        env = self.env
-        fen = env.to_fen()
+        fen = kwargs['board_state']
+        env = Env.from_fen(fen)
         can_stop = True
         n_turns = len(self.moves)
         
@@ -164,7 +162,8 @@ class MCTSPlayer(Player):
             if piece.camp != env.cur_player:
                 print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
                 raise ValueError("cannot play opponent's piece")
-            act, param = infer_action_and_param(piece, dst)
+            act, param, _ = infer_action_and_param(piece, dst)
+            print(to_chinese_action(piece, dst))
             action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}            
             return action
 
@@ -229,8 +228,8 @@ class MCTSPlayer(Player):
         piece, dst = parse_action_iccs(action_t, env.board)
         if piece.camp != env.cur_player:
             print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
-            return -1
-        act, param = infer_action_and_param(piece, dst)
+            return REWARD_ILLEGAL
+        act, param, _ = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
         ob, reward, done, info = env.step(action)
         if done:

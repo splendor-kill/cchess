@@ -1,6 +1,6 @@
 import time
 
-from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator
+from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator, infer_action_and_param
 from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 
 
@@ -23,7 +23,7 @@ class Player:
 
     def make_decision(self, **kwargs):
         raise NotImplementedError('leave the chance to successors')
-    
+
     def finish_game(self, reward):
         pass
 
@@ -95,34 +95,18 @@ class Human(Player):
         for k, v in pinyin.items():
             directive = directive.replace(k, v)
         directive = directive.replace(' ', '')
-        
+
         if directive == ACTION_ALIAS[Action.SUE_DRAW]:
-            return{'action': Action.SUE_DRAW}
+            return {'action': Action.SUE_DRAW}
         if directive == ACTION_ALIAS[Action.RESIGN]:
-            return{'action': Action.RESIGN}
+            return {'action': Action.RESIGN}
 
         piece, dst = parse_action(directive, camp, board)
         if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
             raise ValueError('illegal move')
-        act, param = infer_action_and_param(piece, dst)
+        act, param, _ = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
         return action
-
-
-def infer_action_and_param(piece, dst):
-    param_must_be_col = {Force.MA, Force.XIANG, Force.SHI}
-    col, row = piece.with_my_view()
-    dst_col, dst_row = piece.with_my_view(*dst)
-    if dst_row == row:
-        return Action.TRAVERSE, dst_col
-    if dst_row < row:
-        if piece.force in param_must_be_col:
-            return Action.RETREAT, dst_col
-        return Action.RETREAT, row - dst_row
-    if dst_row > row:
-        if piece.force in param_must_be_col:
-            return Action.RETREAT, dst_col
-        return Action.ADVANCE, dst_row - row
 
 
 class NoBrain(Player):
@@ -139,7 +123,7 @@ class NoBrain(Player):
         action = random.choice(valid_actions)
         piece = action['piece']
         dst = action['dst']
-        act, param = infer_action_and_param(piece, dst)
+        act, param, _ = infer_action_and_param(piece, dst)
         action['action'] = act
         action['act_param'] = param
         print(f'{piece}{piece.col}{ACTION_ALIAS[act]}{param}')
@@ -174,6 +158,6 @@ class Playbook(Player):
         piece, dst = parse_action(move, camp, board)
         if {'piece': piece, 'dst': dst} not in valid_actions:
             raise ValueError('illegal move')
-        act, param = infer_action_and_param(piece, dst)
+        act, param, _ = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
         return action

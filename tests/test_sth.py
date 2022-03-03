@@ -2,11 +2,10 @@ import unittest
 import sys
 sys.path.append('src')
 
-from board import Board, parse_action
+from board import Board, parse_action, infer_action_and_param
 from force import *
 from piece import Camp
 from env import Env
-from player import infer_action_and_param
 
 
 class ShuaiMeetTest(unittest.TestCase):
@@ -169,7 +168,7 @@ class ResultDrawTest(unittest.TestCase):
             cmds = ['仕五退六', '砲3进7', '仕六进五', '砲3退7']
             for i, cmd in enumerate(cmds):
                 piece, dst = parse_action(cmd, Camp.RED if i % 2 == 0 else Camp.BLACK, env.board)
-                act, param = infer_action_and_param(piece, dst)
+                act, param, _ = infer_action_and_param(piece, dst)
                 env.step({'action': act, 'act_param': param, 'piece': piece, 'dst': dst})
         repeat = Env.does_history_repeat(env.last_n_states)
         self.assertTrue(repeat)
