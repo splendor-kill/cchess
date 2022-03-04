@@ -3,7 +3,7 @@ from logging import getLogger
 from board import Board, Action, REWARD_DRAW, REWARD_WIN, REWARD_LOSE, REWARD_ILLEGAL, parse_action_iccs
 from constants import FULL_BOARD
 from piece import CAMP_ALIAS, Camp, Force, CAMP_ALIAS_INV, POINT_OUT_CHECK
-from board import infer_action_and_param
+from board import infer_action_and_param, to_chinese_action
 
 MAX_GAME_LENGTH = 200
 LOWER_BOUND_SUE_DRAW = 25
@@ -107,6 +107,7 @@ class Env:
 
         try:
             captured, check = self.board.make_move(piece, dst)
+            self.step_msgs.append(to_chinese_action(piece, dst))
             if check:
                 self.step_msgs.append(POINT_OUT_CHECK)
             if captured is not None:

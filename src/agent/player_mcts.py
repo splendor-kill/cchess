@@ -12,7 +12,7 @@ from typing import Tuple
 import numpy as np
 
 from agent.helper import flip_policy
-from board import to_iccs_action, parse_action_iccs, to_chinese_action, infer_action_and_param, Action
+from board import to_iccs_action, parse_action_iccs, infer_action_and_param, Action
 from env import Env
 from piece import Camp
 from player import Player
@@ -148,11 +148,7 @@ class MCTSPlayer(Player):
 
             action_t = self.config.labels[my_action]
             piece, dst = parse_action_iccs(action_t, env.board)
-            if piece.camp != env.cur_player:
-                print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
-                raise ValueError("cannot play opponent's piece")
             act, param, _ = infer_action_and_param(piece, dst)
-            print(to_chinese_action(piece, dst))
             action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
             return action
 
