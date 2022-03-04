@@ -10,6 +10,8 @@
   - [ ] 结束条件（求和）
   - [ ] UCCI
   - [ ] observation不带内部状态，action也不引用piece对象，以保证不被意外修改
+  - [ ] 优化，board使用`dict`
+  - [ ] 指出轮到谁下
 
 - [ ] baseline
 
@@ -70,7 +72,7 @@
   空间大小8100
 
 * 方案2
-  任一位置的行，列，2x2范围的位置，空间大小2550
+  任一位置的行，列，四方2x2范围的位置，空间大小2550
 
 * 方案3
 
@@ -95,8 +97,7 @@
 观察到的信息包括：
 
 * `cur_player`: 当前玩家，即现在轮到谁决策了，红或黑
-* `board_state`：棋盘状态，10*9矩阵，棋子(颜色和兵种)被编码为整数，坐标系左上(0,0)，列的正方向朝右，行的正方向向下
-  * 棋子编码：10*颜色+兵种，其中黑1、红2、将帅1、士2、象相3，马4，车5，炮6，兵卒7
+* `board_state`：棋盘状态，[FEN串](https://www.xqbase.com/protocol/cchess_fen.htm)
 * `valid_actions`: 合法的走法数组，每个走法包含的信息有棋子和目标位置，只包含当前玩家的合法走法
 * `sue_draw`: 是否对手在求和，**如果是，需要对求和做出反应**，即是否同意和局
 * `board`: 为了方便，内部对象
@@ -107,9 +108,28 @@
 ```python
 "RESIGN": 认输，认输会引起本局结束
 "SUE_DRAW": 求和，主动求和只要发这个字符串，对手需要回复"yes"或"no"表示同意与否
-iccs串: 如"b7b0"，即源位置和目标位置的编码
+UCCI走法串: 如"b7b0"，即源位置和目标位置的编码
 
 ```
+
+操作环境的输出(即`env.step(action)`的返回值)分为四个部分：
+
+* `ob` (`dict`) 观察，切换当前玩家后(即下一个玩家)的观察，具体描述参看上面，`done`为`True`时为`None`
+* `reward` (`int`) 回报，当前玩家(即做本次action的玩家)的回报，`done`为`False`时为`None`
+* `done` (`bool`)，这一局是否结束
+* `info` (`str`)，一些附加信息
+
+
+
+显示棋局`env.render()`：
+
+字符界面下显示的棋局。棋盘不以玩家视角变化的，而是固定红色在下，黑色在上。
+
+棋子在颜色上做了区分，在字形上也做了区分，红色的感觉更带人性一些，黑方有点像原始文明
+
+另外"将军"，吃子等信息也会显示
+
+
 
 常量
 
@@ -147,8 +167,8 @@ class Force(IntEnum):
 
 ```python
 def decode(board_state)  # 解码棋盘状态，整数->(Camp, Force)列表(从左到右，从上到下)
-def chinese_to_iccs(action, camp, board)  # 中文格式 -> iccs格式，如炮二平五->h7e7
-def iccs_to_chinese(action)  # 上面函数的逆
+def chinese_to_ucci(action, camp, board)  # 中文纵线格式 -> ucci格式，如炮二平五->h7e7
+def ucci_to_chinese(action)  # 上面函数的逆
 ```
 
 示例：
@@ -158,7 +178,7 @@ env = Env(opening)  # 不传开局状态表示从头下起
 
 ob = env.reset()  # 初始观察
 while True:
-    env.render()  # 显示棋盘，棋盘并不是以玩家视角变化的，而是固定红色在下，黑色在上
+    env.render()  # 显示棋局
     player = # which agent are responsible for ob['cur_player']?
     action = player.make_decision(**ob)  # agent 的决策
     ob, reward, done, info = env.step(action)

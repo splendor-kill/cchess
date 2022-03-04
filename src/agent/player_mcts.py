@@ -2,6 +2,7 @@
 This encapsulates all of the functionality related to actually playing the game itself, not just
 making / training predictions.
 """
+import copy
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from logging import getLogger
@@ -9,13 +10,12 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
-import copy
 
 from agent.helper import flip_policy
+from board import to_iccs_action, parse_action_iccs, to_chinese_action, infer_action_and_param, Action
 from env import Env
 from piece import Camp
 from player import Player
-from board import to_iccs_action, parse_action_iccs, REWARD_ILLEGAL, to_chinese_action, infer_action_and_param
 
 logger = getLogger(__name__)
 
@@ -82,7 +82,6 @@ class MCTSPlayer(Player):
             during the running of the AGZ algorithm
     """
 
-    # dot = False
     def __init__(self, id_, config, pipes_strand=None, play_config=None):
         super().__init__(id_)
         self.moves = []
@@ -125,38 +124,28 @@ class MCTSPlayer(Player):
                   f'p: {s[3]:7.5f}')
 
     def make_decision(self, **kwargs):
-        """
-        Figures out the next best move
-        within the specified environment and returns a string describing the action to take.
-
-        :param ChessEnv env: environment in which to figure out the action
-        :param boolean can_stop: whether we are allowed to take no action (return None)
-        :return: None if no action should be taken (indicating a resign). Otherwise, returns a string
-            indicating the action to take in uci format
-        """
-        from board import Board, Action
-        valid_actions = kwargs['valid_actions']
-        camp = kwargs['cur_player']
-        board = kwargs['board']
-        fen = kwargs['board_state']
-        env = Env.from_fen(fen)
+        # valid_actions = kwargs['valid_actions']
+        # camp = kwargs['cur_player']
+        # board = kwargs['board']
+        # fen = kwargs['board_state']
+        # env = Env.from_fen(fen)
+        env = self.env
+        fen = env.to_fen()
         can_stop = True
         n_turns = len(self.moves)
-        
+
         self.reset()
 
-        # for tl in range(self.play_config.thinking_loop):
         root_value, naked_value = self.search_moves(env)
         policy = self.calc_policy(env)
         my_action = int(np.random.choice(range(self.labels_n), p=self.apply_temperature(policy, n_turns)))
-
         if can_stop and self.play_config.resign_threshold is not None and \
                 root_value <= self.play_config.resign_threshold \
                 and n_turns > self.play_config.min_resign_turn:
             return {'action': Action.RESIGN}
         else:
             self.moves.append([fen, list(policy)])
-            
+
             action_t = self.config.labels[my_action]
             piece, dst = parse_action_iccs(action_t, env.board)
             if piece.camp != env.cur_player:
@@ -164,7 +153,7 @@ class MCTSPlayer(Player):
                 raise ValueError("cannot play opponent's piece")
             act, param, _ = infer_action_and_param(piece, dst)
             print(to_chinese_action(piece, dst))
-            action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}            
+            action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
             return action
 
     def search_moves(self, env) -> Tuple[float, float]:
@@ -199,11 +188,6 @@ class MCTSPlayer(Player):
         :return float: value of the move. This is calculated by getting a prediction
             from the value network.
         """
-        if env.done:
-            if env.winner is None:  # means DRAW
-                return 0
-            return -1
-
         state = state_key(env)
 
         with self.node_lock[state]:
@@ -226,9 +210,6 @@ class MCTSPlayer(Player):
             my_stats.q = my_stats.w / my_stats.n
 
         piece, dst = parse_action_iccs(action_t, env.board)
-        if piece.camp != env.cur_player:
-            print(f'player {env.cur_player.name} want do action {action_t}, but {piece} is not own by him')
-            return REWARD_ILLEGAL
         act, param, _ = infer_action_and_param(piece, dst)
         action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
         ob, reward, done, info = env.step(action)
@@ -259,10 +240,9 @@ class MCTSPlayer(Player):
         state_planes = env.canonical_input_planes()
 
         leaf_p, leaf_v = self.predict(state_planes)
-        # these are canonical policy and value (i.e. side to move is "white")
 
         if not env.cur_player == Camp.RED:
-            leaf_p = flip_policy(leaf_p, self.config)  # get it back to python-chess form
+            leaf_p = flip_policy(leaf_p, self.config)
 
         return leaf_p, leaf_v
 
@@ -401,4 +381,4 @@ def state_key(env) -> str:
     :param ChessEnv env: env to encode
     :return str: a str representation of the game state
     """
-    return env.board.board_to_fen1()
+    return env.to_fen()

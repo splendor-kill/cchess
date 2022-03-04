@@ -3,9 +3,9 @@ from typing import List
 
 import numpy as np
 
-from constants import EMPTY_BOARD, FULL_BOARD
-from piece import *
 import force
+from constants import EMPTY_BOARD_UCCI as EMPTY_BOARD, FULL_BOARD
+from piece import *
 
 FORCE_CLZ = {Force.JU: force.Ju,
              Force.MA: force.Ma,
@@ -490,7 +490,12 @@ def infer_action_and_param(piece, dst):
 
 def to_chinese_action(piece, dst):
     act, param, is_col = infer_action_and_param(piece, dst)
-    s = f'{piece}{piece.col + 1}{ACTION_ALIAS[act]}{param + 1 if is_col else param}'
+    piece_col_ex = piece.col + 1
+    param_ex = param + 1 if is_col else param
+    if piece.camp == Camp.RED:
+        piece_col_ex = COL_ALIAS[piece_col_ex][-1]
+        param_ex = COL_ALIAS[param_ex][-1]
+    s = f'{piece}{piece_col_ex}{ACTION_ALIAS[act]}{param_ex}'
     return s
 
 

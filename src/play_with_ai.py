@@ -3,16 +3,16 @@ from logging import DEBUG, StreamHandler, basicConfig, getLogger
 from multiprocessing import Manager
 
 from keras import backend as K
-from model.nn import NNModel
 
-from config import cfg
-from common.utils import load_cfg
 from agent.helper import flip_ucci_labels
-from env import Env
-from piece import Camp
-from player import Human
 from agent.player_mcts import MCTSPlayer
 from board import get_iccs_action_space
+from common.utils import load_cfg
+from config import cfg
+from env import Env
+from model.nn import NNModel
+from piece import Camp
+from player import Human
 
 
 def setup_logger(log_filename):
@@ -33,10 +33,10 @@ def load_ai_model(config, nn_model_config_path, nn_model_weight_path):
 
 def play_a_game(config, with_camp: Camp, nn_model_config_path, nn_model_weight_path, opening=None):
     play_config = config.play
-    current_model = load_ai_model(config,  nn_model_config_path, nn_model_weight_path)
+    current_model = load_ai_model(config, nn_model_config_path, nn_model_weight_path)
     m = Manager()
     pipes_bundle = m.list([current_model.get_pipes(play_config.search_threads)
-                          for _ in range(play_config.max_processes)])
+                           for _ in range(play_config.max_processes)])
 
     pipes_strand = pipes_bundle.pop()
     oppo_camp = with_camp.opponent()
@@ -64,7 +64,6 @@ def play_a_game(config, with_camp: Camp, nn_model_config_path, nn_model_weight_p
 
 if __name__ == '__main__':
     import argparse
-    import logging
     import sys
     import time
     import warnings
