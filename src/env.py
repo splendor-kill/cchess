@@ -13,10 +13,11 @@ logger = getLogger(__name__)
 
 
 class Env:
-    def __init__(self, opening=None):
+    def __init__(self, opening=None, who_first=Camp.RED):
         self.opening = opening if opening is not None else FULL_BOARD
+        self.who_first = who_first
         self.board: Board = Board(self.opening)
-        self.cur_player = Camp.RED
+        self.cur_player = self.who_first
         self.sue_draw = False
         self.done = False
         self.winner: Camp = None
@@ -27,7 +28,7 @@ class Env:
         self.step_msgs = []
 
     def reset(self):
-        self.cur_player = Camp.RED
+        self.cur_player = self.who_first
         self.sue_draw = False
         self.done = False
         self.winner = None
@@ -205,8 +206,7 @@ class Env:
         n_steps_since_last_kill = int(parts[4])
         n_turns = int(parts[5])
 
-        env = Env(opening=opening)
-        env.cur_player = CAMP_ALIAS_INV[color]
+        env = Env(opening=opening, who_first=CAMP_ALIAS_INV[color])
         env.n_steps = 2 * n_turns
         if n_parts == 6:
             return env
