@@ -1,8 +1,9 @@
-import unittest
 import sys
+import unittest
+
 sys.path.append('src')
 
-from board import Board, parse_action, Action, parse_action_iccs, to_iccs_action
+from board import Board, parse_action, Action, parse_action_iccs, to_iccs_action, to_chinese_action
 from force import *
 from piece import Camp, Force
 
@@ -584,7 +585,7 @@ class BingActionTest(unittest.TestCase):
         board = Board(situation)
         for cmd in cmds:
             self.assertRaises(Exception, parse_action, cmd, camp, board)
-            
+
     def test_parse_action6(self):
         cmds = ['前兵进一']
         anss = [(4, 3)]
@@ -676,7 +677,7 @@ class ICCSActionTest(unittest.TestCase):
         camp = Camp.RED
         for cmd in cmds:
             self.assertRaises(Exception, parse_action_iccs, cmd, camp, board)
-            
+
     def test_to_iccs_action(self):
         from constants import FULL_BOARD
         board = Board(FULL_BOARD)
@@ -687,6 +688,32 @@ class ICCSActionTest(unittest.TestCase):
         action = {'piece': p, 'dst': dst}
         a = to_iccs_action(action)
         self.assertEqual('h2e2', a)
+
+
+class ActionToChineseTest(unittest.TestCase):
+    def test_to_chinese1(self):
+        from constants import FULL_BOARD
+        board = Board(FULL_BOARD)
+        srcs = [(2, 9), (2, 0), (1, 9), (7, 0), (5, 9), (5, 0), (8, 9), (8, 0), (7, 7), (7, 2)]
+        dsts = [(4, 7), (4, 2), (0, 7), (8, 2), (4, 8), (4, 1), (8, 7), (8, 2), (7, 8), (7, 1)]
+        anss = ['相七进五', '象3进5', '傌八进九', '馬8进9', '仕四进五', '士6进5', '俥一进二', '車9进2', '炮二退一', '砲8退1']
+        for src, dst, ans in zip(srcs, dsts, anss):
+            piece = board.piece_at(*src)
+            s = to_chinese_action(piece, dst)
+            s = s[10] + s[-3:]  # get rid of color codes
+            self.assertEqual(ans, s)
+
+    def test_to_chinese2(self):
+        from constants import well_known_5
+        board = Board(well_known_5)
+        srcs = [(4, 8), (4, 1), (3, 6), (3, 4), (4, 2)]
+        dsts = [(5, 9), (5, 0), (1, 7), (2, 2), (6, 0)]
+        anss = ['仕五退四', '士5退6', '傌六退八', '馬4退3', '象5退7']
+        for src, dst, ans in zip(srcs, dsts, anss):
+            piece = board.piece_at(*src)
+            s = to_chinese_action(piece, dst)
+            s = s[10] + s[-3:]  # get rid of color codes
+            self.assertEqual(ans, s)
 
 
 if __name__ == '__main__':

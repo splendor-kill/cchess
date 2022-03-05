@@ -473,6 +473,14 @@ def parse_action(cmd: str, camp: Camp, board: Board):
 
 
 def infer_action_and_param(piece, dst):
+    '''inference some action info given piece and destination
+    :param piece:
+    :param dst:
+    :return:
+        action, Action
+        param, with piece's view
+        is_col, if the param is col
+    '''
     param_must_be_col = {Force.MA, Force.XIANG, Force.SHI}
     col, row = piece.with_my_view()
     dst_col, dst_row = piece.with_my_view(*dst)
@@ -484,13 +492,15 @@ def infer_action_and_param(piece, dst):
         return Action.RETREAT, row - dst_row, False
     if dst_row > row:
         if piece.force in param_must_be_col:
-            return Action.RETREAT, dst_col, True
+            return Action.ADVANCE, dst_col, True
         return Action.ADVANCE, dst_row - row, False
 
 
 def to_chinese_action(piece, dst):
+    # TODO, ref board for several same pieces in a col
     act, param, is_col = infer_action_and_param(piece, dst)
-    piece_col_ex = piece.col + 1
+    col, _ = piece.with_my_view()
+    piece_col_ex = col + 1
     param_ex = param + 1 if is_col else param
     if piece.camp == Camp.RED:
         piece_col_ex = COL_ALIAS[piece_col_ex][-1]

@@ -107,7 +107,6 @@ class Env:
 
         try:
             captured, check = self.board.make_move(piece, dst)
-            self.step_msgs.append(to_chinese_action(piece, dst))
             if check:
                 self.step_msgs.append(POINT_OUT_CHECK)
             if captured is not None:
