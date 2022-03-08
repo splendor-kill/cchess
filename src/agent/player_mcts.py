@@ -199,6 +199,8 @@ class MCTSPlayer(Player):
 
         ob, reward, done, info = env.step(action_t)
         if done:
+            if info is not None:
+                logger.info(info)
             return reward
         leaf_v = self.search_my_move(env)  # next move from enemy POV
         leaf_v = -leaf_v

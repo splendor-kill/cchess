@@ -108,7 +108,8 @@ def self_play_buffer(config, pipes_bundle):
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:
-            print(f'player {player.id.name}, reward: {reward}')
+            extra = '' if info is None else f', info: {info}'
+            print(f'player {player.id.name}, reward: {reward}{extra}')
             break
 
     player = players[env.cur_player]
