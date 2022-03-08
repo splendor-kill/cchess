@@ -11,9 +11,7 @@ from typing import Tuple
 
 import numpy as np
 from keras import backend as K
-from board import REWARD_DRAW
-from piece import Camp
-from env import Env
+from xiangqi import Env, Camp
 from model.nn import NNModel
 
 from agent.player_mcts import MCTSPlayer

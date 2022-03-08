@@ -7,7 +7,7 @@ import hashlib
 import json
 import os
 from logging import getLogger
-from board import N_ROWS, N_COLS
+from xiangqi import N_ROWS, N_COLS
 
 from keras.engine.topology import Input
 from keras.engine.training import Model

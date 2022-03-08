@@ -17,6 +17,7 @@ eval:
     dirichlet_alpha: 0.3
     virtual_loss: 3
     resign_threshold: -0.8
+    agree_draw_threshold: -0.3
     min_resign_turn: 5
   evaluate_latest_first: True
   max_game_length: 200
@@ -43,6 +44,7 @@ play:
   tau_decay_rate: 0.99
   virtual_loss: 3
   resign_threshold: -0.8
+  agree_draw_threshold: -0.3
   min_resign_turn: 5
   max_game_length: 200
 

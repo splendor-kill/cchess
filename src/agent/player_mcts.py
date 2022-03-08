@@ -10,11 +10,9 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
+from xiangqi import Env, Camp
 
 from agent.helper import flip_policy
-from board import to_iccs_action, parse_action_iccs, infer_action_and_param, Action
-from env import Env
-from piece import Camp
 from player import Player
 
 logger = getLogger(__name__)
@@ -125,32 +123,26 @@ class MCTSPlayer(Player):
 
     def make_decision(self, **kwargs):
         # valid_actions = kwargs['valid_actions']
-        # camp = kwargs['cur_player']
-        # board = kwargs['board']
-        # fen = kwargs['board_state']
-        # env = Env.from_fen(fen)
-        env = self.env
-        fen = env.to_fen()
+        fen = kwargs['board_state']
+        env = Env.from_fen(fen)
         can_stop = True
         n_turns = len(self.moves)
 
         self.reset()
 
         root_value, naked_value = self.search_moves(env)
+        if kwargs['sue_draw']:  # opponent sue for piece
+            return 'yes' if root_value <= self.play_config.agree_draw_threshold else 'no'
         policy = self.calc_policy(env)
         my_action = int(np.random.choice(range(self.labels_n), p=self.apply_temperature(policy, n_turns)))
         if can_stop and self.play_config.resign_threshold is not None and \
                 root_value <= self.play_config.resign_threshold \
                 and n_turns > self.play_config.min_resign_turn:
-            return {'action': Action.RESIGN}
+            return 'RESIGN'
         else:
             self.moves.append([fen, list(policy)])
-
             action_t = self.config.labels[my_action]
-            piece, dst = parse_action_iccs(action_t, env.board)
-            act, param, _ = infer_action_and_param(piece, dst)
-            action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
-            return action
+            return action_t
 
     def search_moves(self, env) -> Tuple[float, float]:
         """
@@ -205,10 +197,7 @@ class MCTSPlayer(Player):
             my_stats.w += -virtual_loss
             my_stats.q = my_stats.w / my_stats.n
 
-        piece, dst = parse_action_iccs(action_t, env.board)
-        act, param, _ = infer_action_and_param(piece, dst)
-        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
-        ob, reward, done, info = env.step(action)
+        ob, reward, done, info = env.step(action_t)
         if done:
             return reward
         leaf_v = self.search_my_move(env)  # next move from enemy POV
@@ -274,9 +263,8 @@ class MCTSPlayer(Player):
 
         if my_visitstats.p is not None:  # push p to edges
             tot_p = 1e-8
-            valid_actions = env.board.get_final_valid_actions(env.cur_player)
-            for action in valid_actions:
-                mov = to_iccs_action(action)
+            valid_actions = env.get_valid_actions()
+            for mov in valid_actions:
                 mov_p = my_visitstats.p[self.move_lookup[mov]]
                 my_visitstats.a[mov].p = mov_p
                 tot_p += mov_p

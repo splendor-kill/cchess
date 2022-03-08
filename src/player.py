@@ -1,7 +1,7 @@
-import time
-
-from board import parse_action, Action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator, infer_action_and_param
-from piece import Camp, Force, piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
+from xiangqi import Camp, Force, Env
+from xiangqi.board import parse_action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator, to_iccs_action
+from xiangqi.constants import Action
+from xiangqi.piece import piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
 
 
 class Player:
@@ -34,8 +34,10 @@ class Human(Player):
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
-        camp = kwargs['cur_player']
-        board = kwargs['board']
+        fen = kwargs['board_state']
+        env = Env.from_fen(fen)
+        camp = env.cur_player
+        board = env.board
         if len(valid_actions) == 0:
             return {'action': Action.RESIGN}
         oppo_sue_draw = kwargs['sue_draw']
@@ -102,11 +104,8 @@ class Human(Player):
             return {'action': Action.RESIGN}
 
         piece, dst = parse_action(directive, camp, board)
-        if {'piece': piece, 'dst': dst} not in kwargs['valid_actions']:
-            raise ValueError('illegal move')
-        act, param, _ = infer_action_and_param(piece, dst)
-        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
-        return action
+        ucci_action = to_iccs_action({'piece': piece, 'dst': dst})
+        return ucci_action
 
 
 class NoBrain(Player):
@@ -121,12 +120,6 @@ class NoBrain(Player):
             return {'action': Action.SUE_DRAW, 'act_param': True}
         import random
         action = random.choice(valid_actions)
-        piece = action['piece']
-        dst = action['dst']
-        act, param, _ = infer_action_and_param(piece, dst)
-        action['action'] = act
-        action['act_param'] = param
-        print(f'{piece}{piece.col}{ACTION_ALIAS[act]}{param}')
         return action
 
 
@@ -139,8 +132,10 @@ class Playbook(Player):
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
-        camp = kwargs['cur_player']
-        board = kwargs['board']
+        fen = kwargs['board_state']
+        env = Env.from_fen(fen)
+        camp = env.cur_player
+        board = env.board
         if len(valid_actions) == 0:
             return {'action': Action.RESIGN}
         if kwargs['sue_draw']:
@@ -156,8 +151,5 @@ class Playbook(Player):
         print(f'{self.id.name} {move}')
         self.step += 1
         piece, dst = parse_action(move, camp, board)
-        if {'piece': piece, 'dst': dst} not in valid_actions:
-            raise ValueError('illegal move')
-        act, param, _ = infer_action_and_param(piece, dst)
-        action = {'action': act, 'act_param': param, 'piece': piece, 'dst': dst}
-        return action
+        ucci_action = to_iccs_action({'piece': piece, 'dst': dst})
+        return ucci_action

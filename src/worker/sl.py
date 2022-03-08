@@ -10,7 +10,7 @@ from threading import Thread
 from time import time
 from typing import Tuple
 
-from env import Env
+from xiangqi import Env, Camp
 from common.pgn_parser_simple import get_games_from_file
 
 
@@ -113,7 +113,6 @@ def get_buffer(config, game: dict) -> Tuple[Env, list]:
     :param pgn.Game game: game to play
     :return list(str,list(float)): data from this game for the SupervisedLearningWorker.buffer
     """
-    from piece import Camp
     from player import Playbook
     
     result = game['Result']

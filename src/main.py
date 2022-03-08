@@ -1,6 +1,4 @@
-from env import Env
-from piece import Camp
-from board import get_iccs_action_space
+from xiangqi import Env, Camp, get_iccs_action_space
 from player import Human, NoBrain, Playbook
 from common.utils import load_cfg
 from config import cfg

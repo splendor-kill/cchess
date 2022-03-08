@@ -10,8 +10,7 @@ from time import sleep
 from random import shuffle
 
 import numpy as np
-from piece import Camp
-from env import Env
+from xiangqi import Env, Camp
 from model.nn import NNModel
 from agent.helper import flip_policy, testeval
 

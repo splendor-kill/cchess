@@ -7,7 +7,7 @@ from multiprocessing import Manager
 from threading import Thread
 from time import time
 
-from env import Env
+from xiangqi import Env, Camp
 from model.nn import NNModel
 from keras import backend as K
 
@@ -93,7 +93,6 @@ def self_play_buffer(config, pipes_bundle):
         of data to be appended to the SelfPlayWorker.buffer
     """
     pipes_strand = pipes_bundle.pop()  # borrow
-    from piece import Camp
     from agent.player_mcts import MCTSPlayer
 
     players = {Camp.RED: MCTSPlayer(Camp.RED, config, pipes_strand=pipes_strand),

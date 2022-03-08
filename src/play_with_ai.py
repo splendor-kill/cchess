@@ -6,12 +6,10 @@ from keras import backend as K
 
 from agent.helper import flip_ucci_labels
 from agent.player_mcts import MCTSPlayer
-from board import get_iccs_action_space
 from common.utils import load_cfg
 from config import cfg
-from env import Env
+from xiangqi import Env, Camp, get_iccs_action_space
 from model.nn import NNModel
-from piece import Camp
 from player import Human
 
 
