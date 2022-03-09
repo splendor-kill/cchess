@@ -1,11 +1,12 @@
+import multiprocessing as mp
+from logging import StreamHandler, basicConfig, DEBUG, getLogger
+
 from xiangqi import Env, Camp, get_iccs_action_space
-from player import Human, NoBrain, Playbook
+
+from agent.helper import flip_ucci_labels
 from common.utils import load_cfg
 from config import cfg
-import multiprocessing as mp
-
-from logging import StreamHandler, basicConfig, DEBUG, getLogger
-from agent.helper import flip_ucci_labels
+from player import Human, Playbook
 
 
 def setup_logger(log_filename):
@@ -58,7 +59,6 @@ def demo(pgn):
 
 
 if __name__ == '__main__':
-    import logging
     import sys
     import time
     import argparse
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     cfg.update(load_cfg(args.config))
 
     setup_logger(cfg.resource.main_log_path)
-    
+
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)
 

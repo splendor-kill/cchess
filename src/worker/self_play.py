@@ -44,7 +44,9 @@ class SelfPlayWorker:
                 start_time = time()
                 x = futures.popleft()
                 env, data = x.result()
-                print(f'game {game_idx:3} time={time() - start_time:5.1f}s n_steps={env.n_steps:3} {str(env.winner):12}, data: {len(data)}')
+                time_cost = time() - start_time
+                print(f'game: {game_idx}, time: {time_cost:.3f}, n_steps: {env.n_steps}, '
+                      f'winner: {env.winner.name}, data len: {len(data)}')
                 self.buffer += data
                 if (game_idx % self.config.playdata.nb_game_in_file) == 0:
                     self.flush_buffer()
@@ -102,16 +104,22 @@ def self_play_buffer(config, pipes_bundle):
         p.env = env
 
     ob = env.reset()
+    cnt, cost = 0, 0
     while True:
         # env.render()
         player = players[ob['cur_player']]
+        start_time = time()
         action = player.make_decision(**ob)
+        time_cost = time() - start_time
+        cnt += 1
+        cost += time_cost
+        print(f'step: {cnt}, time cost(sec.): {time_cost:.3f}, average: {cost / cnt:.3f}')
         ob, reward, done, info = env.step(action)
         if done:
             extra = '' if info is None else f', info: {info}'
             print(f'player {player.id.name}, reward: {reward}{extra}')
             break
-
+    print(f'average cost(sec.): {cost / cnt:.3f}')
     player = players[env.cur_player]
     player.finish_game(reward)
     oppo = players[env.cur_player.opponent()]
