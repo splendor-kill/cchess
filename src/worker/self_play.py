@@ -45,8 +45,9 @@ class SelfPlayWorker:
                 x = futures.popleft()
                 env, data = x.result()
                 time_cost = time() - start_time
+                winner = env.winner.name if env.winner is not None else str(env.winner)
                 print(f'game: {game_idx}, time: {time_cost:.3f}, n_steps: {env.n_steps}, '
-                      f'winner: {env.winner.name}, data len: {len(data)}')
+                      f'winner: {winner}, data len: {len(data)}')
                 self.buffer += data
                 if (game_idx % self.config.playdata.nb_game_in_file) == 0:
                     self.flush_buffer()
