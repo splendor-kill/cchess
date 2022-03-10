@@ -10,7 +10,7 @@ from threading import Lock
 from typing import Tuple
 
 import numpy as np
-from xiangqi import Env, Camp
+from xiangqi import Env, Camp, Force
 
 from agent.helper import flip_policy
 from player import Player
@@ -203,7 +203,9 @@ class MCTSPlayer(Player):
                 logger.info(info)
             return reward
         leaf_v = self.search_my_move(env)  # next move from enemy POV
-        leaf_v = -leaf_v
+        if 'captured' in ob and ob['captured'] is not None:
+            reward = self.reward_shaping(ob['captured'])
+        leaf_v = -leaf_v + reward
 
         # BACKUP STEP
         # on returning search path
@@ -360,6 +362,21 @@ class MCTSPlayer(Player):
         """
         for move in self.moves:  # add this game winner result to all past moves.
             move += [z]
+
+    def reward_shaping(self, captured):
+        assert captured is not None
+        assert captured.force != Force.SHUAI
+        rewards = {Force.SHUAI: 1.0,
+                   Force.SHI: 0.04,
+                   Force.XIANG: 0.04,
+                   Force.MA: 0.08,
+                   Force.JU: 0.18,
+                   Force.PAO: 0.09,
+                   Force.BING: 0.02}
+        r = rewards[captured.force]
+        if captured.force == Force.BING and captured.is_cross_river():
+            return r * 2
+        return r
 
 
 def state_key(env) -> str:
