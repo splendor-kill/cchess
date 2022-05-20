@@ -16,3 +16,13 @@ function move2Iccs(mv) {
       CHR(ASC("A") + FILE_X(sqDst) - FILE_LEFT) +
       CHR(ASC("9") - RANK_Y(sqDst) + RANK_TOP);
 }
+
+function iccs2Move(iccs) {
+  var f1 = ASC(iccs[0]) - ASC("A") + FILE_LEFT;
+  var r1 = ASC("9") - ASC(iccs[1]) + RANK_TOP;
+  var src = COORD_XY(f1, r1);
+  var f2 = ASC(iccs[3]) - ASC("A") + FILE_LEFT;
+  var r2 = ASC("9") - ASC(iccs[4]) + RANK_TOP;
+  var dst = COORD_XY(f2, r2);
+  return MOVE(src, dst);
+}
