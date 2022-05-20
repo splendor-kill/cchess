@@ -133,7 +133,7 @@ Board.prototype.playSound = function(soundFile) {
 }
 
 Board.prototype.setSearch = function(hashLevel) {
-  this.search = hashLevel == 0 ? null : new Search(this.pos, hashLevel);
+  this.search = hashLevel == 0 ? null : new MCTS(this.pos, hashLevel);
 }
 
 Board.prototype.flipped = function(sq) {
