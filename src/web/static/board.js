@@ -323,10 +323,10 @@ Board.prototype.response = function() {
   this.thinking.style.visibility = "visible";
   var this_ = this;
   this.busy = true;
-  setTimeout(function() {
-    this_.addMove(board.search.searchMain(LIMIT_DEPTH, board.millis), true);
+  board.search.searchMain(LIMIT_DEPTH, board.millis, (mv) => {
+    this_.addMove(mv, true);
     this_.thinking.style.visibility = "hidden";
-  }, 250);
+  });
 }
 
 Board.prototype.clickSquare = function(sq_) {

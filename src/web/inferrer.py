@@ -1,19 +1,19 @@
+import os
+from logging import getLogger
+from multiprocessing import Manager
+
+from flask import Flask, jsonify, request
+from xiangqi import Camp, Env, get_iccs_action_space
+
+import sys
+sys.path.append('../')
+
 from model.nn import NNModel
 from config import cfg
 from common.utils import load_cfg
 from agent.player_mcts import MCTSPlayer
 from agent.helper import flip_ucci_labels
-import os
-import sys
-from logging import getLogger
-from multiprocessing import Manager
-
 from keras import backend as K
-from flask import Flask, jsonify, request
-from xiangqi import Camp, Env, get_iccs_action_space
-
-sys.path.append('../')
-
 
 logger = getLogger(__name__)
 config_path = '../config.yaml'
