@@ -3,6 +3,7 @@ from logging import getLogger
 from multiprocessing import Manager
 
 from flask import Flask, jsonify, request
+from flask_cors import CORS, cross_origin
 from xiangqi import Camp, Env, get_iccs_action_space
 
 import sys
@@ -35,6 +36,7 @@ model.session = K.get_session()
 model.graph = model.session.graph
 
 app = Flask(__name__)
+CORS(app, support_credentials=True)
 
 m = Manager()
 pipes_bundle_r = m.list([model.get_pipes(cfg.play.search_threads) for _ in range(cfg.play.max_processes)])
@@ -51,6 +53,7 @@ players = {
 
 
 @app.route('/play', methods=['GET', 'POST'])
+@cross_origin(supports_credentials=True)
 def play():
     data = request.get_json()
     fen = data['position']
