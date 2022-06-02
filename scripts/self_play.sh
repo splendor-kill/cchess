@@ -1,0 +1,1 @@
+PYTHONUNBUFFERED=1 nohup python src/main.py --cmd self src/config.yaml &>sims.log &
