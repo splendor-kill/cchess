@@ -58,6 +58,7 @@ class SelfPlayWorker:
         model = NNModel(self.config)
         if self.config.opts.new or not load_best_model_weight(model):
             model.build()
+            os.makedirs(os.path.dirname(model.config.resource.model_best_config_path), exist_ok=True)
             save_as_best_model(model)
         model.session = K.get_session()
         model.graph = model.session.graph
@@ -70,6 +71,7 @@ class SelfPlayWorker:
         rc = self.config.resource
         game_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
         path = os.path.join(rc.play_data_dir, rc.play_data_filename_tmpl % game_id)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         logger.info(f"save play data to {path}")
         thread = Thread(target=write_game_data_to_file, args=(path, self.buffer))
         thread.start()
