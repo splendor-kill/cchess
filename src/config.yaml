@@ -80,17 +80,17 @@ resource:
   model_dir: "./data/model"
   model_best_config_path: "./data/model/model_best_config.json"
   model_best_weight_path: "./data/model/model_best_weight.h5"
-  distributed_storage: "s3"
+  distributed_storage: "ftp"
 
   model_best_distributed_s3_url: ""
   model_best_distributed_s3_access_key: ""
   model_best_distributed_s3_secret_key: ""
-  model_best_distributed_s3_bucket: ""
+  model_best_distributed_s3_bucket: "xq-best-model"
 
   model_best_distributed_ftp_server: ""
   model_best_distributed_ftp_user: ""
   model_best_distributed_ftp_password: ""
-  model_best_distributed_ftp_remote_path: ""
+  model_best_distributed_ftp_remote_path: "/xq-best-model/"
 
   next_generation_model_dir: "./data/model/next_generation"
   next_generation_model_dirname_tmpl: "model_%s"
