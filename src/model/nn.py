@@ -2,7 +2,6 @@
 Defines the actual model for making policy and value predictions given an observation.
 """
 
-import ftplib
 import hashlib
 import json
 import os
@@ -21,6 +20,7 @@ from keras import backend as K
 
 from agent.inferencer import ChessModelAPI
 from config import cfg
+from common.store_helper import get_store_util
 
 # noinspection PyPep8Naming
 
@@ -132,15 +132,10 @@ class NNModel:
         if mc.distributed and config_path == resources.model_best_config_path:
             try:
                 logger.debug("loading model from server")
-                ftp_connection = ftplib.FTP(resources.model_best_distributed_ftp_server,
-                                            resources.model_best_distributed_ftp_user,
-                                            resources.model_best_distributed_ftp_password)
-                ftp_connection.cwd(resources.model_best_distributed_ftp_remote_path)
-                ftp_connection.retrbinary("RETR model_best_config.json", open(config_path, 'wb').write)
-                ftp_connection.retrbinary("RETR model_best_weight.h5", open(weight_path, 'wb').write)
-                ftp_connection.quit()
-            except:
-                pass
+                store_util = get_store_util(resource_config=resources)
+                store_util.load([('model_best_config.json', config_path), ('model_best_weight.h5', weight_path)])
+            except Exception as e:
+                logger.error(e)
         if os.path.exists(config_path) and os.path.exists(weight_path):
             logger.debug(f"loading model from {config_path}")
             with open(config_path, "rt") as f:
@@ -172,17 +167,7 @@ class NNModel:
         if mc.distributed and config_path == resources.model_best_config_path:
             try:
                 logger.debug("saving model to server")
-                ftp_connection = ftplib.FTP(resources.model_best_distributed_ftp_server,
-                                            resources.model_best_distributed_ftp_user,
-                                            resources.model_best_distributed_ftp_password)
-                ftp_connection.cwd(resources.model_best_distributed_ftp_remote_path)
-                fh = open(config_path, 'rb')
-                ftp_connection.storbinary('STOR model_best_config.json', fh)
-                fh.close()
-
-                fh = open(weight_path, 'rb')
-                ftp_connection.storbinary('STOR model_best_weight.h5', fh)
-                fh.close()
-                ftp_connection.quit()
-            except:
-                pass
+                store_util = get_store_util(resource_config=resources)
+                store_util.save([(config_path, 'model_best_config.json'), (weight_path, 'model_best_weight.h5')])
+            except Exception as e:
+                logger.error(e)
