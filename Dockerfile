@@ -11,7 +11,7 @@ RUN cd /usr/bin && ln -sf python3.7 python && ln -sf python3.7 python3 && ln -sf
 RUN pip install numpy pandas scikit-learn pyyaml easydict pyperclip keras==2.3.1 h5py==2.10.0 tensorflow==1.15 -i https://mirrors.aliyun.com/pypi/simple/
 RUN pip install --upgrade "protobuf<=3.20.1" -i https://mirrors.aliyun.com/pypi/simple/
 
-RUN pip --no-cache-dir install xiangqi
+RUN pip --no-cache-dir install xiangqi minio
 
 ENV WORKSPACE /workspace
 ENV CODE_DIR $WORKSPACE/src
@@ -25,4 +25,5 @@ VOLUME  $WORKSPACE/data
 
 WORKDIR $WORKSPACE
 
-CMD ./self_play.sh
+ENTRYPOINT ["./self_play.sh"]
+CMD ["self"]
