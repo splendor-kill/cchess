@@ -1,6 +1,6 @@
 from typing import Tuple, Sequence
 from minio import Minio
-from minio.error import S3Error, ResponseError
+from minio.error import S3Error
 
 
 class S3Helper:
