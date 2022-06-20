@@ -8,6 +8,10 @@ from datetime import datetime
 from logging import getLogger
 from time import sleep
 from random import shuffle
+import subprocess
+import shutil
+import multiprocessing as mp
+import signal
 
 import numpy as np
 from xiangqi import Env, Camp
@@ -30,6 +34,26 @@ def start(config):
     """
     return OptimizeWorker(config).start()
 
+def download_gameplay_from_s3(cfg):
+    if cfg.distributed_storage == 's3_omnitool':
+        url = cfg.model_best_distributed_s3_bucket
+        url = os.path.dirname(url.strip(os.path.sep))
+        remote_path = os.path.join(url, 'xq_play_data/')
+        local_path = os.path.dirname(cfg.play_data_dir)
+        cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
+        print(cmd)
+        result = subprocess.run(
+            cmd, stdout=subprocess.PIPE, shell=True)
+        print(result)
+
+def check_disk_usage(pid):
+    while True:
+        total, used, free = shutil.disk_usage('.')
+        print('disk usage:', used / total)
+        if used / total > 0.9:
+            print('disk full')
+            return
+        sleep(1.)
 
 class OptimizeWorker:
     """
@@ -49,7 +73,8 @@ class OptimizeWorker:
         self.config = config
         self.model = None
         self.dataset = deque(), deque(), deque()
-        self.executor = ProcessPoolExecutor(max_workers=config.trainer.cleaning_processes)
+        self.executor = ProcessPoolExecutor(
+            max_workers=config.trainer.cleaning_processes)
 
     def start(self):
         """
@@ -63,6 +88,18 @@ class OptimizeWorker:
         Does the actual training of the model, running it on game data. Endless.
         """
         self.compile_model()
+
+        proc_download = mp.Process(
+            target=download_gameplay_from_s3, args=(self.config.resource,))
+        proc_download.start()
+        sleep(1)
+        #proc_monitor = mp.Process(target=check_disk_usage, args=(proc_download.pid,))
+        #proc_monitor.start()
+        #proc_monitor.join()
+        check_disk_usage(proc_download.pid)
+        proc_download.terminate()
+        proc_download.join()
+
         self.filenames = deque(get_game_data_filenames(self.config.resource))
         shuffle(self.filenames)
         total_steps = self.config.trainer.start_total_steps
@@ -86,7 +123,8 @@ class OptimizeWorker:
         """
         tc = self.config.trainer
         state_ary, policy_ary, value_ary = self.collect_all_loaded_data()
-        tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
+        tensorboard_cb = TensorBoard(
+            log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
         self.model.model.fit(state_ary, [policy_ary, value_ary],
                              batch_size=tc.batch_size,
                              epochs=epochs,
@@ -101,8 +139,10 @@ class OptimizeWorker:
         Compiles the model to use optimizer and loss function tuned for supervised learning
         """
         opt = Adam()
-        losses = ['categorical_crossentropy', 'mean_squared_error']  # avoid overfit for supervised
-        self.model.model.compile(optimizer=opt, loss=losses, loss_weights=self.config.trainer.loss_weights)
+        # avoid overfit for supervised
+        losses = ['categorical_crossentropy', 'mean_squared_error']
+        self.model.model.compile(
+            optimizer=opt, loss=losses, loss_weights=self.config.trainer.loss_weights)
 
     def save_current_model(self):
         """
@@ -110,10 +150,13 @@ class OptimizeWorker:
         """
         rc = self.config.resource
         model_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
-        model_dir = os.path.join(rc.next_generation_model_dir, rc.next_generation_model_dirname_tmpl % model_id)
+        model_dir = os.path.join(
+            rc.next_generation_model_dir, rc.next_generation_model_dirname_tmpl % model_id)
         os.makedirs(model_dir, exist_ok=True)
-        config_path = os.path.join(model_dir, rc.next_generation_model_config_filename)
-        weight_path = os.path.join(model_dir, rc.next_generation_model_weight_filename)
+        config_path = os.path.join(
+            model_dir, rc.next_generation_model_config_filename)
+        weight_path = os.path.join(
+            model_dir, rc.next_generation_model_weight_filename)
         self.model.save(config_path, weight_path)
 
     def fill_queue(self):
@@ -134,7 +177,8 @@ class OptimizeWorker:
                 if len(self.filenames) > 0:
                     filename = self.filenames.popleft()
                     logger.debug(f"loading data from {filename}")
-                    futures.append(executor.submit(load_data_from_file, filename))
+                    futures.append(executor.submit(
+                        load_data_from_file, filename))
 
     def collect_all_loaded_data(self):
         """
@@ -165,8 +209,10 @@ class OptimizeWorker:
         else:
             latest_dir = dirs[-1]
             logger.debug("loading latest model")
-            config_path = os.path.join(latest_dir, rc.next_generation_model_config_filename)
-            weight_path = os.path.join(latest_dir, rc.next_generation_model_weight_filename)
+            config_path = os.path.join(
+                latest_dir, rc.next_generation_model_config_filename)
+            weight_path = os.path.join(
+                latest_dir, rc.next_generation_model_weight_filename)
             model.load(config_path, weight_path)
         return model
 
@@ -192,8 +238,10 @@ def convert_to_cheating_data(data):
             policy = flip_policy(policy)
 
         move_number = int(state_fen.split(' ')[5])
-        value_certainty = min(5, move_number) / 5  # reduces the noise of the opening... plz train faster
-        sl_value = value * value_certainty + testeval(state_fen, False) * (1 - value_certainty)
+        # reduces the noise of the opening... plz train faster
+        value_certainty = min(5, move_number) / 5
+        sl_value = value * value_certainty + \
+            testeval(state_fen, False) * (1 - value_certainty)
 
         state_list.append(state_planes)
         policy_list.append(policy)
