@@ -27,10 +27,10 @@ PYTHONUNBUFFERED=1 python src/main.py --cmd opt src/config.yaml > opt.log 2>&1 &
 PYTHONUNBUFFERED=1 python src/main.py --cmd eval src/config.yaml > eval.log 2>&1 &\
 ' > $WORKSPACE/run.sh
 RUN chmod +x $WORKSPACE/run.sh
-RUN "mkdir -p $WORKSPACE/logs"
-RUN "mkdir -p $WORKSPACE/data/play_data"
-RUN "mkdir -p $WORKSPACE/data/model/next_generation"
-RUN "mkdir -p $WORKSPACE/model"
+RUN bash -c "mkdir -p $WORKSPACE/logs"
+RUN bash -c "mkdir -p $WORKSPACE/data/play_data"
+RUN bash -c "mkdir -p $WORKSPACE/data/model/next_generation"
+RUN bash -c "mkdir -p $WORKSPACE/model"
 
 #VOLUME  $WORKSPACE/data
 
