@@ -3,6 +3,7 @@ Various helper functions for working with the data used in this app
 """
 
 import os
+import subprocess
 import json
 from datetime import datetime
 from glob import glob
@@ -43,12 +44,19 @@ def get_next_generation_model_dirs(rc):
     return dirs
 
 
-def write_game_data_to_file(path, data):
+def write_game_data_to_file(path, data, cfg):
     try:
         with open(path, "wt") as f:
             json.dump(data, f)
     except Exception as e:
         print(e)
+    if cfg.distributed_storage == 's3_omnitool':
+        url = cfg.model_best_distributed_s3_bucket
+        url = os.path.dirname(url.strip(os.path.sep))
+        remote_path = os.path.join(url, 'xq_play_data', os.path.basename(path))
+        cmd =  f'python3 -m omnitool.omni_storage -f upload_url -u {remote_path} -l {path}'
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
+        print(result)
 
 
 def read_game_data_from_file(path):
