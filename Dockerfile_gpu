@@ -16,21 +16,19 @@ RUN pip install --upgrade "protobuf<=3.20.1" -i https://mirrors.aliyun.com/pypi/
 
 RUN pip install xiangqi minio
 
-RUN git clone https://github.com/splendor-kill/cchess.git /workspace
+#RUN git clone https://github.com/splendor-kill/cchess.git /workspace
 ENV WORKSPACE /workspace
 ENV CODE_DIR $WORKSPACE/src
 ENV PYTHONPATH $CODE_DIR
 COPY ./src $CODE_DIR
 SHELL ["/bin/bash", "-c"]
 RUN echo $'#!/bin/bash\n\
-PYTHONUNBUFFERED=1 python src/main.py --cmd opt src/config.yaml > opt.log 2>&1 &\
-PYTHONUNBUFFERED=1 python src/main.py --cmd eval src/config.yaml > eval.log 2>&1 &\
+PYTHONUNBUFFERED=1 python src/main.py --cmd $1 src/config.yaml > $1.log 2>&1 &\
 ' > $WORKSPACE/run.sh
 RUN chmod +x $WORKSPACE/run.sh
 RUN bash -c "mkdir -p $WORKSPACE/logs"
 RUN bash -c "mkdir -p $WORKSPACE/data/play_data"
 RUN bash -c "mkdir -p $WORKSPACE/data/model/next_generation"
-RUN bash -c "mkdir -p $WORKSPACE/model"
 
 #VOLUME  $WORKSPACE/data
 
@@ -38,4 +36,4 @@ WORKDIR $WORKSPACE
 
 ENV TF_FORCE_GPU_ALLOW_GROWTH true
 
-CMD ["./run.sh"]
+CMD ["./run.sh opt"]

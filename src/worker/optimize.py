@@ -6,6 +6,7 @@ from collections import deque
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from logging import getLogger
+from threading import Thread
 from time import sleep
 from random import shuffle
 import subprocess
@@ -34,6 +35,7 @@ def start(config):
     """
     return OptimizeWorker(config).start()
 
+
 def download_gameplay_from_s3(cfg):
     if cfg.distributed_storage == 's3_omnitool':
         url = cfg.model_best_distributed_s3_bucket
@@ -42,18 +44,36 @@ def download_gameplay_from_s3(cfg):
         local_path = os.path.dirname(cfg.play_data_dir)
         cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
         print(cmd)
-        result = subprocess.run(
-            cmd, stdout=subprocess.PIPE, shell=True)
-        print(result)
+        return subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+
+
+def is_disk_enough():
+    total, used, free = shutil.disk_usage('.')
+    # print('disk usage:', used / total)
+    return used / total < 0.8
+
 
 def check_disk_usage(pid):
     while True:
-        total, used, free = shutil.disk_usage('.')
-        print('disk usage:', used / total)
-        if used / total > 0.9:
-            print('disk full')
-            return
-        sleep(1.)
+        sleep(10.)
+        try:
+            if not is_disk_enough():
+                print('download pause')
+                os.kill(pid, signal.SIGSTOP)
+            else:
+                print('download continue')
+                os.kill(pid, signal.SIGCONT)
+        except:
+            pass
+
+
+def del_some_files(obsolete_files):
+    for file in obsolete_files:
+        try:
+            os.remove(file)
+        except FileNotFoundError:
+            pass
+
 
 class OptimizeWorker:
     """
@@ -73,8 +93,7 @@ class OptimizeWorker:
         self.config = config
         self.model = None
         self.dataset = deque(), deque(), deque()
-        self.executor = ProcessPoolExecutor(
-            max_workers=config.trainer.cleaning_processes)
+        self.executor = ProcessPoolExecutor(max_workers=config.trainer.cleaning_processes)
 
     def start(self):
         """
@@ -89,18 +108,19 @@ class OptimizeWorker:
         """
         self.compile_model()
 
-        proc_download = mp.Process(
-            target=download_gameplay_from_s3, args=(self.config.resource,))
-        proc_download.start()
-        sleep(1)
-        #proc_monitor = mp.Process(target=check_disk_usage, args=(proc_download.pid,))
-        #proc_monitor.start()
-        #proc_monitor.join()
-        check_disk_usage(proc_download.pid)
-        proc_download.terminate()
-        proc_download.join()
+        if self.config.resource.distributed_storage == 's3_omnitool':
+            proc_download = download_gameplay_from_s3(self.config.resource)
+            controller = Thread(target=check_disk_usage, args=(proc_download.pid,))
+            controller.start()
 
-        self.filenames = deque(get_game_data_filenames(self.config.resource))
+        files = get_game_data_filenames(self.config.resource)
+        min_n = max(self.config.trainer.min_data_size_to_learn, 2)
+        while len(files) < min_n:  # wait for download more files
+            sleep(60)
+            files = get_game_data_filenames(self.config.resource)
+
+        downloaded_files = set(files)
+        self.filenames = deque(files)
         shuffle(self.filenames)
         total_steps = self.config.trainer.start_total_steps
 
@@ -115,6 +135,15 @@ class OptimizeWorker:
                 b.popleft()
                 c.popleft()
 
+            if self.config.resource.distributed_storage == 's3_omnitool':
+                files = get_game_data_filenames(self.config.resource)
+                new_files = set(files).difference(downloaded_files)
+                self.filenames.extend(new_files)
+                downloaded_files.update(new_files)
+                handled_files = downloaded_files.difference(set(self.filenames))
+                if not is_disk_enough():
+                    del_some_files(handled_files)
+
     def train_epoch(self, epochs):
         """
         Runs some number of epochs of training
@@ -123,8 +152,7 @@ class OptimizeWorker:
         """
         tc = self.config.trainer
         state_ary, policy_ary, value_ary = self.collect_all_loaded_data()
-        tensorboard_cb = TensorBoard(
-            log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
+        tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
         self.model.model.fit(state_ary, [policy_ary, value_ary],
                              batch_size=tc.batch_size,
                              epochs=epochs,
@@ -141,8 +169,7 @@ class OptimizeWorker:
         opt = Adam()
         # avoid overfit for supervised
         losses = ['categorical_crossentropy', 'mean_squared_error']
-        self.model.model.compile(
-            optimizer=opt, loss=losses, loss_weights=self.config.trainer.loss_weights)
+        self.model.model.compile(optimizer=opt, loss=losses, loss_weights=self.config.trainer.loss_weights)
 
     def save_current_model(self):
         """
@@ -150,13 +177,10 @@ class OptimizeWorker:
         """
         rc = self.config.resource
         model_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
-        model_dir = os.path.join(
-            rc.next_generation_model_dir, rc.next_generation_model_dirname_tmpl % model_id)
+        model_dir = os.path.join(rc.next_generation_model_dir, rc.next_generation_model_dirname_tmpl % model_id)
         os.makedirs(model_dir, exist_ok=True)
-        config_path = os.path.join(
-            model_dir, rc.next_generation_model_config_filename)
-        weight_path = os.path.join(
-            model_dir, rc.next_generation_model_weight_filename)
+        config_path = os.path.join(model_dir, rc.next_generation_model_config_filename)
+        weight_path = os.path.join(model_dir, rc.next_generation_model_weight_filename)
         self.model.save(config_path, weight_path)
 
     def fill_queue(self):
@@ -177,8 +201,7 @@ class OptimizeWorker:
                 if len(self.filenames) > 0:
                     filename = self.filenames.popleft()
                     logger.debug(f"loading data from {filename}")
-                    futures.append(executor.submit(
-                        load_data_from_file, filename))
+                    futures.append(executor.submit(load_data_from_file, filename))
 
     def collect_all_loaded_data(self):
         """
@@ -209,10 +232,8 @@ class OptimizeWorker:
         else:
             latest_dir = dirs[-1]
             logger.debug("loading latest model")
-            config_path = os.path.join(
-                latest_dir, rc.next_generation_model_config_filename)
-            weight_path = os.path.join(
-                latest_dir, rc.next_generation_model_weight_filename)
+            config_path = os.path.join(latest_dir, rc.next_generation_model_config_filename)
+            weight_path = os.path.join(latest_dir, rc.next_generation_model_weight_filename)
             model.load(config_path, weight_path)
         return model
 
@@ -240,12 +261,12 @@ def convert_to_cheating_data(data):
         move_number = int(state_fen.split(' ')[5])
         # reduces the noise of the opening... plz train faster
         value_certainty = min(5, move_number) / 5
-        sl_value = value * value_certainty + \
-            testeval(state_fen, False) * (1 - value_certainty)
+        sl_value = value * value_certainty + testeval(state_fen, False) * (1 - value_certainty)
 
         state_list.append(state_planes)
         policy_list.append(policy)
         value_list.append(sl_value)
 
-    return np.asarray(state_list, dtype=np.float32), np.asarray(policy_list, dtype=np.float32), np.asarray(value_list,
-                                                                                                           dtype=np.float32)
+    return np.asarray(state_list, dtype=np.float32), \
+        np.asarray(policy_list, dtype=np.float32), \
+        np.asarray(value_list, dtype=np.float32)

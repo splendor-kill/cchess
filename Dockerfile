@@ -11,19 +11,23 @@ RUN cd /usr/bin && ln -sf python3.7 python && ln -sf python3.7 python3 && ln -sf
 RUN pip install numpy pandas scikit-learn pyyaml easydict pyperclip keras==2.3.1 h5py==2.10.0 tensorflow==1.15 -i https://mirrors.aliyun.com/pypi/simple/
 RUN pip install --upgrade "protobuf<=3.20.1" -i https://mirrors.aliyun.com/pypi/simple/
 
-RUN pip --no-cache-dir install xiangqi minio
+RUN pip install xiangqi minio
 
 ENV WORKSPACE /workspace
 ENV CODE_DIR $WORKSPACE/src
 ENV PYTHONPATH $CODE_DIR
 COPY ./src $CODE_DIR
-COPY ./scripts/self_play.sh $WORKSPACE/self_play.sh
-RUN chmod +x $WORKSPACE/self_play.sh
+SHELL ["/bin/bash", "-c"]
+RUN echo $'#!/bin/bash\n\
+PYTHONUNBUFFERED=1 python src/main.py --cmd $1 src/config.yaml > $1.log 2>&1 &\
+' > $WORKSPACE/run.sh
+RUN chmod +x $WORKSPACE/run.sh
 RUN bash -c "mkdir -p $WORKSPACE/logs"
+RUN bash -c "mkdir -p $WORKSPACE/data/play_data"
+RUN bash -c "mkdir -p $WORKSPACE/data/model/next_generation"
 
 VOLUME  $WORKSPACE/data
 
 WORKDIR $WORKSPACE
 
-ENTRYPOINT ["./self_play.sh"]
-CMD ["self"]
+CMD ["./run.sh self"]
