@@ -1,19 +1,19 @@
-from logging import getLogger
 import os
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
+from logging import getLogger
 from multiprocessing import Manager
 from threading import Thread
 from time import time
 
-from xiangqi import Env, Camp
-from model.nn import NNModel
 from keras import backend as K
+from xiangqi import Env, Camp
 
-from common.data_helper import get_game_data_filenames, write_game_data_to_file, pretty_print
+from common.data_helper import get_game_data_filenames, write_game_data_to_file
 from model.helper import load_best_model_weight, save_as_best_model, \
     reload_best_model_weight_if_changed
+from model.nn import NNModel
 
 logger = getLogger(__name__)
 
@@ -30,6 +30,7 @@ class SelfPlayWorker:
         self.pipes_bundle = self.m.list([self.current_model.get_pipes(self.config.play.search_threads) for _ in
                                          range(self.config.play.max_processes)])
         self.buffer = []
+
 
     def start(self):
         self.buffer.clear()

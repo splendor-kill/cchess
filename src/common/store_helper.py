@@ -5,14 +5,14 @@ def get_store_util(resource_config):
         return S3Helper(resource_config.model_best_distributed_s3_url,
                         resource_config.model_best_distributed_s3_access_key,
                         resource_config.model_best_distributed_s3_secret_key,
-                        resource_config.model_best_distributed_s3_bucket
+                        resource_config.model_best_dir_remote
                         )
     elif which_storage == 's3_omnitool':
         from common.store_omnitool import S3Helper
         return S3Helper(resource_config.model_best_distributed_s3_url,
                         resource_config.model_best_distributed_s3_access_key,
                         resource_config.model_best_distributed_s3_secret_key,
-                        resource_config.model_best_distributed_s3_bucket
+                        resource_config.model_best_dir_remote
                         )
     elif which_storage == "ftp":
         from common.store_ftp import FTPHelper

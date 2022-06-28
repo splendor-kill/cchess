@@ -3,6 +3,7 @@ numpy
 scikit-learn
 pandas
 pyyaml
+xiangqi
 easydict
 pyperclip
 keras==2.3.1

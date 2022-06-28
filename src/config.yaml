@@ -50,7 +50,7 @@ play:
 
 
 trainer:
-  min_data_size_to_learn: 0
+  min_data_size_to_learn: 5
   cleaning_processes: 5 # RAM explosion...
   vram_frac: 1.0
   batch_size: 128 # tune this to your gpu memory
@@ -69,7 +69,7 @@ model:
   res_layer_num: 7
   l2_reg: 1e-4
   value_fc_size: 256
-  distributed: False
+  distributed: True
   input_depth: 18
 
 
@@ -80,12 +80,14 @@ resource:
   model_dir: "./data/model"
   model_best_config_path: "./data/model/model_best_config.json"
   model_best_weight_path: "./data/model/model_best_weight.h5"
-  distributed_storage: "ftp"
+  distributed_storage: "s3"
+  dist_play_data: True
+  dist_next_gen_model: True
 
   model_best_distributed_s3_url: ""
   model_best_distributed_s3_access_key: ""
   model_best_distributed_s3_secret_key: ""
-  model_best_distributed_s3_bucket: "xq-best-model"
+  model_best_dir_remote: "xq-best-model"
 
   model_best_distributed_ftp_server: ""
   model_best_distributed_ftp_user: ""
@@ -93,12 +95,15 @@ resource:
   model_best_distributed_ftp_remote_path: "/xq-best-model/"
 
   next_generation_model_dir: "./data/model/next_generation"
+  next_generation_model_dir_remote: "xq-model-next-gen"
   next_generation_model_dirname_tmpl: "model_%s"
   next_generation_model_config_filename: "model_config.json"
   next_generation_model_weight_filename: "model_weight.h5"
 
-  play_data_dir: "./data/play_data"
+  play_data_dir: "./data/xq-play-data"
+  play_data_dir_remote: "xq-play-data"
   play_data_filename_tmpl: "play_%s.json"
+  play_data_upper_limit: 0.8
 
   log_dir: "./logs"
   main_log_path: "./logs/main.log"

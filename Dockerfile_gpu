@@ -7,7 +7,7 @@ ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn
 RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
 RUN apt-get update
 
-RUN apt-get install -y --no-install-recommends git
+RUN apt-get install -y --no-install-recommends wget git emacs-nox less
 
 RUN pip install --upgrade pip
 RUN pip install -U setuptools
@@ -27,12 +27,15 @@ PYTHONUNBUFFERED=1 python src/main.py --cmd $1 src/config.yaml > $1.log 2>&1 &\
 ' > $WORKSPACE/run.sh
 RUN chmod +x $WORKSPACE/run.sh
 RUN bash -c "mkdir -p $WORKSPACE/logs"
-RUN bash -c "mkdir -p $WORKSPACE/data/play_data"
-RUN bash -c "mkdir -p $WORKSPACE/data/model/next_generation"
+RUN bash -c "mkdir -p $WORKSPACE/data"
 
 #VOLUME  $WORKSPACE/data
 
 WORKDIR $WORKSPACE
+
+RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc
+RUN chmod +x mc
+RUN mv mc /usr/local/bin
 
 ENV TF_FORCE_GPU_ALLOW_GROWTH true
 

@@ -2,28 +2,26 @@
 Encapsulates the worker which trains ChessModels using game data from recorded games from a file.
 """
 import os
+import shutil
+import signal
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from logging import getLogger
+from random import shuffle
 from threading import Thread
 from time import sleep
-from random import shuffle
-import subprocess
-import shutil
-import multiprocessing as mp
-import signal
 
 import numpy as np
-from xiangqi import Env, Camp
-from model.nn import NNModel
-from agent.helper import flip_policy, testeval
-
-from common.data_helper import get_game_data_filenames, read_game_data_from_file, get_next_generation_model_dirs
-from model.helper import load_best_model_weight
-
-from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
+from keras.optimizers import Adam
+from xiangqi import Env, Camp
+
+from agent.helper import flip_policy, testeval
+from common.data_helper import get_game_data_filenames, read_game_data_from_file, get_next_generation_model_dirs
+from common.store_helper import get_store_util
+from model.helper import load_best_model_weight
+from model.nn import NNModel
 
 logger = getLogger(__name__)
 
@@ -36,32 +34,21 @@ def start(config):
     return OptimizeWorker(config).start()
 
 
-def download_gameplay_from_s3(cfg):
-    if cfg.distributed_storage == 's3_omnitool':
-        url = cfg.model_best_distributed_s3_bucket
-        url = os.path.dirname(url.strip(os.path.sep))
-        remote_path = os.path.join(url, 'xq_play_data/')
-        local_path = os.path.dirname(cfg.play_data_dir)
-        cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
-        print(cmd)
-        return subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-
-
-def is_disk_enough():
+def is_disk_enough(upper_limit):
     total, used, free = shutil.disk_usage('.')
     # print('disk usage:', used / total)
-    return used / total < 0.8
+    return used / total < upper_limit
 
 
-def check_disk_usage(pid):
+def check_disk_usage(pid, upper_limit):
     while True:
-        sleep(10.)
+        sleep(1.)
         try:
-            if not is_disk_enough():
-                print('download pause')
+            if not is_disk_enough(upper_limit):
+                # print('download pause')
                 os.kill(pid, signal.SIGSTOP)
             else:
-                print('download continue')
+                # print('download continue')
                 os.kill(pid, signal.SIGCONT)
         except:
             pass
@@ -94,6 +81,7 @@ class OptimizeWorker:
         self.model = None
         self.dataset = deque(), deque(), deque()
         self.executor = ProcessPoolExecutor(max_workers=config.trainer.cleaning_processes)
+        self.filenames = deque()
 
     def start(self):
         """
@@ -107,20 +95,24 @@ class OptimizeWorker:
         Does the actual training of the model, running it on game data. Endless.
         """
         self.compile_model()
-
-        if self.config.resource.distributed_storage == 's3_omnitool':
-            proc_download = download_gameplay_from_s3(self.config.resource)
-            controller = Thread(target=check_disk_usage, args=(proc_download.pid,))
+        rc = self.config.resource
+        if rc.dist_play_data:
+            store_util = get_store_util(resource_config=rc)
+            # put remote dir object under the parent dir, keep local name same as remote name in config
+            local_path = os.path.dirname(rc.play_data_dir)
+            os.makedirs(local_path, exist_ok=True)
+            proc_download = store_util.download_dirobj_async(rc.play_data_dir_remote, local_path)
+            controller = Thread(target=check_disk_usage, args=(proc_download.pid, rc.play_data_upper_limit))
             controller.start()
 
-        files = get_game_data_filenames(self.config.resource)
-        min_n = max(self.config.trainer.min_data_size_to_learn, 2)
-        while len(files) < min_n:  # wait for download more files
+        files = get_game_data_filenames(rc)
+        min_n = max(self.config.trainer.min_data_size_to_learn, 3)
+        while rc.dist_play_data and len(files) < min_n:  # wait for download more files
             sleep(60)
-            files = get_game_data_filenames(self.config.resource)
+            files = get_game_data_filenames(rc)
 
         downloaded_files = set(files)
-        self.filenames = deque(files)
+        self.filenames.extend(files)
         shuffle(self.filenames)
         total_steps = self.config.trainer.start_total_steps
 
@@ -135,13 +127,13 @@ class OptimizeWorker:
                 b.popleft()
                 c.popleft()
 
-            if self.config.resource.distributed_storage == 's3_omnitool':
-                files = get_game_data_filenames(self.config.resource)
+            if rc.dist_play_data:
+                files = get_game_data_filenames(rc)
                 new_files = set(files).difference(downloaded_files)
                 self.filenames.extend(new_files)
                 downloaded_files.update(new_files)
                 handled_files = downloaded_files.difference(set(self.filenames))
-                if not is_disk_enough():
+                if not is_disk_enough(rc.play_data_upper_limit):
                     del_some_files(handled_files)
 
     def train_epoch(self, epochs):
@@ -205,7 +197,6 @@ class OptimizeWorker:
 
     def collect_all_loaded_data(self):
         """
-
         :return: a tuple containing the data in self.dataset, split into
         (state, policy, and value).
         """
@@ -268,5 +259,5 @@ def convert_to_cheating_data(data):
         value_list.append(sl_value)
 
     return np.asarray(state_list, dtype=np.float32), \
-        np.asarray(policy_list, dtype=np.float32), \
-        np.asarray(value_list, dtype=np.float32)
+           np.asarray(policy_list, dtype=np.float32), \
+           np.asarray(value_list, dtype=np.float32)

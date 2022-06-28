@@ -9,18 +9,13 @@ from multiprocessing import Manager
 from time import sleep
 from typing import Tuple
 
-import numpy as np
 from keras import backend as K
 from xiangqi import Env, Camp
-from model.nn import NNModel
 
 from agent.player_mcts import MCTSPlayer
-from agent.helper import flip_policy, testeval
-
-from common.data_helper import get_next_generation_model_dirs, pretty_print
+from common.data_helper import get_next_generation_model_dirs
 from model.helper import load_best_model_weight, save_as_best_model
-
-
+from model.nn import NNModel
 
 logger = getLogger(__name__)
 
@@ -51,8 +46,7 @@ class EvaluateWorker:
         self.current_model = self.load_current_model()
         self.m = Manager()
         self.pipes_bundle = self.m.list([self.current_model.get_pipes(self.play_config.search_threads) for _ in
-                                      range(self.play_config.max_processes)])
-
+                                         range(self.play_config.max_processes)])
 
     def start(self):
         """
@@ -96,11 +90,6 @@ class EvaluateWorker:
                 logger.debug(f"game {game_idx:3}: ng_score={ng_score:.1f} as {'black' if cur_red else 'red'} "
                              f"win_rate={win_rate * 100:5.1f}% ")
 
-                # colors = ("current_model", "ng_model")
-                # if not cur_red:
-                #     colors = reversed(colors)
-                # pretty_print(env, colors)
-
                 if len(results) - sum(results) >= self.config.eval.game_num * (1 - self.config.eval.replace_rate):
                     logger.debug(f"lose count reach {results.count(0)} so give up challenge")
                     return False
@@ -120,6 +109,7 @@ class EvaluateWorker:
         """
         rc = self.config.resource
         new_dir = os.path.join(rc.next_generation_model_dir, "copies", os.path.basename(model_dir))
+        os.makedirs(os.path.dirname(new_dir), exist_ok=True)
         os.rename(model_dir, new_dir)
 
     def load_current_model(self):
@@ -173,8 +163,9 @@ def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:
     cur_model_camp = Camp.RED if cur_red else Camp.BLACK
     ng_model_camp = cur_model_camp.opponent()
 
-    players = {cur_model_camp: MCTSPlayer(cur_model_camp, config, pipes_strand=cur_pipes, play_config=config.eval.play_config),
-               ng_model_camp: MCTSPlayer(ng_model_camp, config, pipes_strand=ng_pipes, play_config=config.eval.play_config)}
+    players = {
+        cur_model_camp: MCTSPlayer(cur_model_camp, config, pipes_strand=cur_pipes, play_config=config.eval.play_config),
+        ng_model_camp: MCTSPlayer(ng_model_camp, config, pipes_strand=ng_pipes, play_config=config.eval.play_config)}
     env = Env()
     for p in players.values():
         p.env = env
@@ -186,7 +177,7 @@ def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:
         action = player.make_decision(**ob)
         ob, reward, done, info = env.step(action)
         if done:
-            print(f'player {player.id.name}, reward: {reward}')
+            logger.debug(f'player {player.id.name}, reward: {reward}')
             break
 
     if env.winner == ng_model_camp:
