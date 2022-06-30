@@ -6,6 +6,7 @@ from logging import getLogger
 from multiprocessing import Manager
 from threading import Thread
 from time import time
+from uuid import uuid4
 
 from keras import backend as K
 from xiangqi import Env, Camp
@@ -24,6 +25,7 @@ def start(cfg):
 
 class SelfPlayWorker:
     def __init__(self, config):
+        self.dist_id = uuid4()
         self.config = config
         self.current_model = self.load_model()
         self.m = Manager()

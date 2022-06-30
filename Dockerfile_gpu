@@ -33,7 +33,8 @@ RUN bash -c "mkdir -p $WORKSPACE/data"
 
 WORKDIR $WORKSPACE
 
-RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc
+#RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc
+COPY ./mc $WORKSPACE
 RUN chmod +x mc
 RUN mv mc /usr/local/bin
 

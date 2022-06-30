@@ -107,3 +107,9 @@ resource:
 
   log_dir: "./logs"
   main_log_path: "./logs/main.log"
+
+  s3_carrier: "carrier.json"
+  s3_play_data_notifier: "play_data.notifier"
+  s3_model_notifier: "model.notifier"
+  s3_play_data_rec_dir: "play_data_records"
+  s3_model_rec_dir: "model_records"
