@@ -16,7 +16,7 @@ from keras import backend as K
 from xiangqi import Env, Camp
 
 from agent.player_mcts import MCTSPlayer
-from common.data_helper import get_next_gen_model_dirs, check_ng_model_notifier, update_best_model_notifier, \
+from common.data_helper import check_ng_model_notifier, update_best_model_notifier, \
     check_best_model_notifier
 from common.store_helper import get_store_util
 from model.helper import load_best_model_weight, save_as_best_model
@@ -225,7 +225,7 @@ class EvaluateWorker:
                 remote_path = os.path.join(cfg.next_gen_model_dir_remote, model_name)
                 proc = store_util.download_dirobj_async(remote_path, cfg.next_gen_model_dir)
                 proc.wait()
-                print(f'download_dirobj {remote_path} retcode: {proc.returncode}')
+                logger.info(f'download_dirobj {remote_path} retcode: {proc.returncode}')
                 if proc.returncode != 0:
                     continue
                 all_models.add(f)

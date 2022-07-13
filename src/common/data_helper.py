@@ -40,6 +40,7 @@ def write_game_data_to_file(path, data, rc=None, **kwargs):
         from common.store_helper import get_store_util
         store_util = get_store_util(resource_config=rc)
         upload_replay_and_notify(store_util, rc, path, **kwargs)
+        os.remove(path)
 
 
 def read_game_data_from_file(path):
