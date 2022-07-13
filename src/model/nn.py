@@ -126,24 +126,6 @@ class NNModel:
         :param str weight_path: path to the file containing the model weights
         :return: true iff successful in loading
         """
-        mc = self.config.model
-        rc = self.config.resource
-        if mc.distributed:
-            logger.debug("loading model from server")
-            store_util = get_store_util(resource_config=rc)
-            local_path, remote_path = None, None
-            if config_path == rc.model_best_config_path:
-                local_path, remote_path = rc.model_dir, rc.model_best_dir_remote
-            elif rc.dist_next_gen_model:
-                local_path, remote_path = rc.model_dir, rc.model_best_dir_remote
-            if local_path is not None and remote_path is not None:
-                config_remote_path = config_path.replace(local_path, remote_path)
-                weight_remote_path = weight_path.replace(local_path, remote_path)
-                try:
-                    store_util.load([(config_remote_path, config_path), (weight_remote_path, weight_path)])
-                except Exception as e:
-                    logger.error(e)
-
         if os.path.exists(config_path) and os.path.exists(weight_path):
             logger.debug(f"loading model from {config_path}")
             with open(config_path, "rt") as f:
@@ -170,20 +152,49 @@ class NNModel:
         self.digest = self.fetch_digest(weight_path)
         logger.debug(f"saved model digest {self.digest}")
 
+    def upload(self, config_path, weight_path):
         mc = self.config.model
         rc = self.config.resource
-        if mc.distributed:
-            logger.debug("saving model to server")
-            store_util = get_store_util(resource_config=rc)
-            local_path, remote_path = None, None
-            if config_path == rc.model_best_config_path:
-                local_path, remote_path = rc.model_dir, rc.model_best_dir_remote
-            elif rc.dist_next_gen_model:  # presume if it is not the best model then it is a next gen model
-                local_path, remote_path = rc.next_generation_model_dir, rc.next_generation_model_dir_remote
-            if local_path is not None and remote_path is not None:
-                config_remote_path = config_path.replace(local_path, remote_path)
-                weight_remote_path = weight_path.replace(local_path, remote_path)
-                try:
-                    store_util.save([(config_path, config_remote_path), (weight_path, weight_remote_path)])
-                except Exception as e:
-                    logger.error(e)
+        if not mc.distributed:
+            return
+
+        logger.debug("saving model to server")
+        store_util = get_store_util(resource_config=rc)
+        local_path, remote_path = None, None
+        suffix_config, suffix_weight = None, None
+        if os.path.basename(config_path) == os.path.basename(rc.model_best_config_path):
+            local_path, remote_path = rc.model_dir, rc.model_best_dir_remote
+            suffix_config = os.path.basename(config_path)
+            suffix_weight = os.path.basename(weight_path)
+        elif rc.dist_next_gen_model:  # presume if it is not the best model then it is a next gen model
+            local_path, remote_path = rc.next_gen_model_dir, rc.next_gen_model_dir_remote
+            suffix_config = config_path.split(rc.next_gen_model_dir)[-1].strip('/')
+            suffix_weight = weight_path.split(rc.next_gen_model_dir)[-1].strip('/')
+        if local_path is not None and remote_path is not None:
+            config_remote_path = os.path.join(remote_path, suffix_config)
+            weight_remote_path = os.path.join(remote_path, suffix_weight)
+            try:
+                store_util.save([(config_path, config_remote_path), (weight_path, weight_remote_path)])
+            except Exception as e:
+                logger.error(e)
+
+    def download(self, config_path, weight_path):
+        mc = self.config.model
+        rc = self.config.resource
+        if not mc.distributed:
+            return
+        logger.debug(f'loading model {weight_path} from server')
+        store_util = get_store_util(resource_config=rc)
+        local_path, remote_path = None, None
+        if os.path.basename(config_path) == os.path.basename(rc.model_best_config_path):
+            local_path, remote_path = rc.model_dir, rc.model_best_dir_remote
+        elif rc.dist_next_gen_model:
+            local_path, remote_path = rc.next_gen_model_dir, rc.next_gen_model_dir_remote
+        if local_path is not None and remote_path is not None:
+            config_remote_path = os.path.join(remote_path, os.path.basename(config_path))
+            weight_remote_path = os.path.join(remote_path, os.path.basename(weight_path))
+            try:
+                logger.debug(f'load model from {weight_remote_path} to {weight_path}')
+                store_util.load([(config_remote_path, config_path), (weight_remote_path, weight_path)])
+            except Exception as e:
+                logger.error(e)

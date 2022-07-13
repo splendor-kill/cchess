@@ -1,4 +1,5 @@
-FROM tensorflow/tensorflow:1.14.0-gpu-py3
+#FROM tensorflow/tensorflow:1.14.0-gpu-py3
+FROM tensorflow/tensorflow:1.15.5-gpu-py3
 
 RUN cp /etc/apt/sources.list /etc/apt/sources.list.bak
 COPY ./apt_src_aliyun /etc/apt/sources.list
@@ -23,7 +24,7 @@ ENV PYTHONPATH $CODE_DIR
 COPY ./src $CODE_DIR
 SHELL ["/bin/bash", "-c"]
 RUN echo $'#!/bin/bash\n\
-PYTHONUNBUFFERED=1 python src/main.py --cmd $1 src/config.yaml > $1.log 2>&1 &\
+PYTHONUNBUFFERED=1 python src/main.py --log debug --cmd $1 src/config.yaml > $1.log 2>&1 &\
 ' > $WORKSPACE/run.sh
 RUN chmod +x $WORKSPACE/run.sh
 RUN bash -c "mkdir -p $WORKSPACE/logs"

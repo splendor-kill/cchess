@@ -1,19 +1,24 @@
 """
 Encapsulates the worker which evaluates newly-trained models and picks the best one
 """
-
+import json
 import os
+import shutil
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from logging import getLogger
 from multiprocessing import Manager
+from random import random
 from time import sleep
 from typing import Tuple
+from uuid import uuid4
 
 from keras import backend as K
 from xiangqi import Env, Camp
 
 from agent.player_mcts import MCTSPlayer
-from common.data_helper import get_next_generation_model_dirs
+from common.data_helper import get_next_gen_model_dirs, check_ng_model_notifier, update_best_model_notifier, \
+    check_best_model_notifier
+from common.store_helper import get_store_util
 from model.helper import load_best_model_weight, save_as_best_model
 from model.nn import NNModel
 
@@ -41,7 +46,10 @@ class EvaluateWorker:
         """
         :param config: Config to use to control how evaluation should work
         """
+        self.dist_id = uuid4().hex
         self.config = config
+        rc = self.config.resource
+        self.store_util = get_store_util(resource_config=rc)
         self.play_config = config.eval.play_config
         self.current_model = self.load_current_model()
         self.m = Manager()
@@ -53,15 +61,32 @@ class EvaluateWorker:
         Start evaluation, endlessly loading the latest models from the directory which stores them and
         checking if they do better than the current model, saving the result in self.current_model
         """
+        model_walk = iter(self.load_next_generation_model())
         while True:
-            ng_model, model_dir = self.load_next_generation_model()
+            try:
+                ng_model, model_dir = next(model_walk)
+            except StopIteration:
+                sleep(1)
+                model_walk = iter(self.load_next_generation_model())
+                continue
+
             logger.debug(f"start evaluate model {model_dir}")
-            ng_is_great = self.evaluate_model(ng_model)
-            if ng_is_great:
-                logger.debug(f"New Model become best model: {model_dir}")
-                save_as_best_model(ng_model)
-                self.current_model = ng_model
-            self.move_model(model_dir)
+            try:
+                ng_is_great = self.evaluate_model(ng_model)
+                if ng_is_great:
+                    logger.debug(f"New Model become best model: {model_dir}")
+                    save_as_best_model(ng_model)
+                    self.current_model = ng_model
+
+                    rc = self.config.resource
+                    update_best_model_notifier(self.store_util, rc, phase='updating', did=self.dist_id)
+                    model_config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
+                    model_weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
+                    ng_model.upload(model_config_path, model_weight_path)
+                    update_best_model_notifier(self.store_util, rc, phase='updated', did=self.dist_id)
+                self.move_model(model_dir)
+            except Exception as e:
+                logger.error(e)
 
     def evaluate_model(self, ng_model):
         """
@@ -108,16 +133,19 @@ class EvaluateWorker:
         :param file model_dir: directory where model should be moved
         """
         rc = self.config.resource
-        new_dir = os.path.join(rc.next_generation_model_dir, "copies", os.path.basename(model_dir))
-        os.makedirs(os.path.dirname(new_dir), exist_ok=True)
-        os.rename(model_dir, new_dir)
+        # new_dir = os.path.join(rc.next_gen_model_dir, "copies", os.path.basename(model_dir))
+        # os.makedirs(os.path.dirname(new_dir), exist_ok=True)
+        # os.rename(model_dir, new_dir)]
+        shutil.rmtree(model_dir)
 
     def load_current_model(self):
         """
         Loads the best model from the standard directory.
         :return ChessModel: the model
         """
+
         model = NNModel(self.config)
+        self.wait_best_model_notifier(self.config.resource, model)
         load_best_model_weight(model)
         model.session = K.get_session()
         model.graph = model.session.graph
@@ -129,20 +157,81 @@ class EvaluateWorker:
         :return (ChessModel, file): the model and the directory that it was in
         """
         rc = self.config.resource
+        for model_dir in self.wait_next_gen_model_comming(rc):
+            config_path = os.path.join(model_dir, rc.next_gen_model_config_filename)
+            weight_path = os.path.join(model_dir, rc.next_gen_model_weight_filename)
+            model = NNModel(self.config)
+            try:
+                model.load(config_path, weight_path)
+            except Exception as e:
+                logger.error(e)
+                continue
+            model.session = K.get_session()
+            model.graph = model.session.graph
+            yield model, model_dir
+
+    def wait_best_model_notifier(self, cfg, model):
         while True:
-            dirs = get_next_generation_model_dirs(self.config.resource)
-            if dirs:
-                break
-            logger.info("There is no next generation model to evaluate")
-            sleep(60)
-        model_dir = dirs[-1] if self.config.eval.evaluate_latest_first else dirs[0]
-        config_path = os.path.join(model_dir, rc.next_generation_model_config_filename)
-        weight_path = os.path.join(model_dir, rc.next_generation_model_weight_filename)
-        model = NNModel(self.config)
-        model.load(config_path, weight_path)
-        model.session = K.get_session()
-        model.graph = model.session.graph
-        return model, model_dir
+            _, carrier = check_best_model_notifier(self.store_util, cfg)
+            if carrier is None:
+                sleep(1)
+            else:
+                logger.debug(carrier)
+                phase = carrier['phase']
+                if phase == 'init':
+                    sleep(1)
+                    continue
+                elif phase in ('init_done', 'updated'):
+                    if carrier['id'] != self.dist_id:
+                        logger.debug('download model')
+                        config_path = os.path.join(cfg.model_dir, cfg.model_best_config_path)
+                        weight_path = os.path.join(cfg.model_dir, cfg.model_best_weight_path)
+                        model.download(config_path, weight_path)
+                        # model.load() should be successful
+                    else:
+                        path = os.path.join(cfg.model_dir, cfg.model_best_weight_path)
+                        assert os.path.exists(path)
+                    break
+                elif phase == 'updating':
+                    if carrier['id'] != self.dist_id:
+                        # wait someone upload model
+                        sleep(random())
+                        continue
+                    else:
+                        # get the chance to upload model
+                        break
+
+    def wait_next_gen_model_comming(self, cfg):
+        from common.store_helper import get_store_util
+        store_util = get_store_util(resource_config=cfg)
+        all_models = set()
+        while True:
+            if not check_ng_model_notifier(store_util, cfg):
+                sleep(1)
+                continue
+            proc = store_util.download_dirobj_async(cfg.s3_model_rec_dir, cfg.data_dir)
+            proc.wait()
+            models_at_now = set()
+            path = os.path.join(cfg.data_dir, cfg.s3_model_rec_dir)
+            files = os.listdir(path)
+            for fn in files:
+                with open(os.path.join(path, fn)) as f:
+                    content = json.load(f)
+                models_at_now.add(os.path.basename(content['model_dir']))
+            logger.debug(f'n models at now: {len(models_at_now)}, {list(models_at_now)[0]}')
+            new_models = set(models_at_now).difference(all_models)
+            for f in new_models:
+                model_name = os.path.basename(f)
+                remote_path = os.path.join(cfg.next_gen_model_dir_remote, model_name)
+                proc = store_util.download_dirobj_async(remote_path, cfg.next_gen_model_dir)
+                proc.wait()
+                print(f'download_dirobj {remote_path} retcode: {proc.returncode}')
+                if proc.returncode != 0:
+                    continue
+                all_models.add(f)
+                model_path = os.path.join(cfg.next_gen_model_dir, model_name)
+                yield model_path
+            break
 
 
 def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:

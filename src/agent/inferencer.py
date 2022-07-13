@@ -68,7 +68,7 @@ class ChessModelAPI:
                     try:
                         ret = pipe.recv()
                     except EOFError as e:
-                        print(e)
+                        logger.error(e)
                         return
                     data.append(ret)
                     result_pipes.append(pipe)

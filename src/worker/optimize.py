@@ -1,15 +1,15 @@
 """
 Encapsulates the worker which trains ChessModels using game data from recorded games from a file.
 """
+import json
 import os
+import queue
 import shutil
-import signal
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from logging import getLogger
-from random import shuffle
-from threading import Thread
+from multiprocessing import Process, Manager
 from time import sleep
 
 import numpy as np
@@ -18,8 +18,10 @@ from keras.optimizers import Adam
 from xiangqi import Env, Camp
 
 from agent.helper import flip_policy, testeval
-from common.data_helper import get_game_data_filenames, read_game_data_from_file, get_next_generation_model_dirs
+from common.data_helper import get_game_data_filenames, read_game_data_from_file, upload_ng_model_and_notify, \
+    check_play_data_notifier, check_best_model_notifier
 from common.store_helper import get_store_util
+from common.utils import is_disk_enough, del_some_files
 from model.helper import load_best_model_weight
 from model.nn import NNModel
 
@@ -32,34 +34,6 @@ def start(config):
     :param Config config: config to use
     """
     return OptimizeWorker(config).start()
-
-
-def is_disk_enough(upper_limit):
-    total, used, free = shutil.disk_usage('.')
-    # print('disk usage:', used / total)
-    return used / total < upper_limit
-
-
-def check_disk_usage(pid, upper_limit):
-    while True:
-        sleep(1.)
-        try:
-            if not is_disk_enough(upper_limit):
-                # print('download pause')
-                os.kill(pid, signal.SIGSTOP)
-            else:
-                # print('download continue')
-                os.kill(pid, signal.SIGCONT)
-        except:
-            pass
-
-
-def del_some_files(obsolete_files):
-    for file in obsolete_files:
-        try:
-            os.remove(file)
-        except FileNotFoundError:
-            pass
 
 
 class OptimizeWorker:
@@ -78,10 +52,16 @@ class OptimizeWorker:
 
     def __init__(self, config):
         self.config = config
+        rc = self.config.resource
+        os.makedirs(rc.model_dir, exist_ok=True)
+        os.makedirs(rc.next_gen_model_dir, exist_ok=True)
+        os.makedirs(rc.play_data_dir, exist_ok=True)
+        self.store_util = get_store_util(resource_config=rc)
         self.model = None
         self.dataset = deque(), deque(), deque()
-        self.executor = ProcessPoolExecutor(max_workers=config.trainer.cleaning_processes)
-        self.filenames = deque()
+        self.m = Manager()
+        self.filenames = self.m.Queue()
+        self.handled_files = self.m.Queue()
 
     def start(self):
         """
@@ -96,29 +76,22 @@ class OptimizeWorker:
         """
         self.compile_model()
         rc = self.config.resource
-        if rc.dist_play_data:
-            store_util = get_store_util(resource_config=rc)
-            # put remote dir object under the parent dir, keep local name same as remote name in config
-            local_path = os.path.dirname(rc.play_data_dir)
-            os.makedirs(local_path, exist_ok=True)
-            proc_download = store_util.download_dirobj_async(rc.play_data_dir_remote, local_path)
-            controller = Thread(target=check_disk_usage, args=(proc_download.pid, rc.play_data_upper_limit))
-            controller.start()
 
         files = get_game_data_filenames(rc)
-        min_n = max(self.config.trainer.min_data_size_to_learn, 3)
-        while rc.dist_play_data and len(files) < min_n:  # wait for download more files
-            sleep(60)
-            files = get_game_data_filenames(rc)
+        for f in files:
+            self.filenames.put_nowait(f)
+        if rc.dist_play_data:
+            controller = Process(target=wait_play_data_comming, args=(rc, self.filenames,), daemon=True)
+            controller.start()
 
-        downloaded_files = set(files)
-        self.filenames.extend(files)
-        shuffle(self.filenames)
         total_steps = self.config.trainer.start_total_steps
 
         while True:
             self.fill_queue()
             steps = self.train_epoch(self.config.trainer.epoch_to_checkpoint)
+            if steps == 0:
+                sleep(1)
+                continue
             total_steps += steps
             self.save_current_model()
             a, b, c = self.dataset
@@ -127,14 +100,14 @@ class OptimizeWorker:
                 b.popleft()
                 c.popleft()
 
-            if rc.dist_play_data:
-                files = get_game_data_filenames(rc)
-                new_files = set(files).difference(downloaded_files)
-                self.filenames.extend(new_files)
-                downloaded_files.update(new_files)
-                handled_files = downloaded_files.difference(set(self.filenames))
-                if not is_disk_enough(rc.play_data_upper_limit):
-                    del_some_files(handled_files)
+            if rc.dist_play_data and not is_disk_enough(rc.disk_upper_limit):
+                to_del = []
+                while not self.handled_files.empty():
+                    try:
+                        to_del.append(self.handled_files.get_nowait())
+                    except queue.Empty:
+                        break
+                del_some_files(to_del)
 
     def train_epoch(self, epochs):
         """
@@ -144,6 +117,8 @@ class OptimizeWorker:
         """
         tc = self.config.trainer
         state_ary, policy_ary, value_ary = self.collect_all_loaded_data()
+        if state_ary.shape[0] == 0:
+            return 0
         tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
         self.model.model.fit(state_ary, [policy_ary, value_ary],
                              batch_size=tc.batch_size,
@@ -169,11 +144,15 @@ class OptimizeWorker:
         """
         rc = self.config.resource
         model_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
-        model_dir = os.path.join(rc.next_generation_model_dir, rc.next_generation_model_dirname_tmpl % model_id)
+        model_dir = os.path.join(rc.next_gen_model_dir, rc.next_gen_model_dirname_tmpl % model_id)
         os.makedirs(model_dir, exist_ok=True)
-        config_path = os.path.join(model_dir, rc.next_generation_model_config_filename)
-        weight_path = os.path.join(model_dir, rc.next_generation_model_weight_filename)
+        config_path = os.path.join(model_dir, rc.next_gen_model_config_filename)
+        weight_path = os.path.join(model_dir, rc.next_gen_model_weight_filename)
         self.model.save(config_path, weight_path)
+        if rc.dist_next_gen_model:
+            self.model.upload(config_path, weight_path)
+            upload_ng_model_and_notify(self.store_util, rc, path=model_dir, time=model_id)
+            shutil.rmtree(model_dir)
 
     def fill_queue(self):
         """
@@ -182,18 +161,18 @@ class OptimizeWorker:
         futures = deque()
         with ProcessPoolExecutor(max_workers=self.config.trainer.cleaning_processes) as executor:
             for _ in range(self.config.trainer.cleaning_processes):
-                if len(self.filenames) == 0:
+                if self.filenames.empty():
                     break
-                filename = self.filenames.popleft()
+                filename = self.filenames.get()
                 logger.debug(f"loading data from {filename}")
-                futures.append(executor.submit(load_data_from_file, filename))
+                futures.append(executor.submit(load_data_from_file, filename, self.handled_files))
             while futures and len(self.dataset[0]) < self.config.trainer.dataset_size:
                 for x, y in zip(self.dataset, futures.popleft().result()):
                     x.extend(y)
-                if len(self.filenames) > 0:
-                    filename = self.filenames.popleft()
+                if not self.filenames.empty():
+                    filename = self.filenames.get()
                     logger.debug(f"loading data from {filename}")
-                    futures.append(executor.submit(load_data_from_file, filename))
+                    futures.append(executor.submit(load_data_from_file, filename, self.handled_files))
 
     def collect_all_loaded_data(self):
         """
@@ -215,22 +194,32 @@ class OptimizeWorker:
         model = NNModel(self.config)
         rc = self.config.resource
 
-        dirs = get_next_generation_model_dirs(rc)
-        if not dirs:
-            logger.debug("loading best model")
-            if not load_best_model_weight(model):
-                raise RuntimeError("Best model can not loaded!")
-        else:
-            latest_dir = dirs[-1]
-            logger.debug("loading latest model")
-            config_path = os.path.join(latest_dir, rc.next_generation_model_config_filename)
-            weight_path = os.path.join(latest_dir, rc.next_generation_model_weight_filename)
-            model.load(config_path, weight_path)
+        while True:
+            _, carrier = check_best_model_notifier(self.store_util, rc)
+            if carrier is None:
+                logger.info('no model found')
+                sleep(1)
+                continue
+            logger.debug(carrier)
+            phase = carrier['phase']
+            if phase in ('init_done', 'updated'):
+                logger.info('download model')
+                config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
+                weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
+                model.download(config_path, weight_path)
+                break
+            else:  # in ('init', 'updating')
+                sleep(1)
+                continue
+
+        if not load_best_model_weight(model):
+            raise RuntimeError('load model failed.')
         return model
 
 
-def load_data_from_file(filename):
+def load_data_from_file(filename, handled_q):
     data = read_game_data_from_file(filename)
+    handled_q.put_nowait(filename)
     return convert_to_cheating_data(data)
 
 
@@ -261,3 +250,31 @@ def convert_to_cheating_data(data):
     return np.asarray(state_list, dtype=np.float32), \
            np.asarray(policy_list, dtype=np.float32), \
            np.asarray(value_list, dtype=np.float32)
+
+
+def wait_play_data_comming(cfg, filename_q):
+    from common.store_helper import get_store_util
+    store_util = get_store_util(resource_config=cfg)
+    all_files = set()
+    while True:
+        if not check_play_data_notifier(store_util, cfg):
+            logger.info('check_play_data_notifier')
+            sleep(1)
+            continue
+        proc = store_util.download_dirobj_async(cfg.s3_play_data_rec_dir, cfg.data_dir)
+        proc.wait()
+        files_at_now = set()
+        path = os.path.join(cfg.data_dir, cfg.s3_play_data_rec_dir)
+        files = os.listdir(path)
+        for fn in files:
+            with open(os.path.join(path, fn)) as f:
+                content = json.load(f)
+            files_at_now.add(content['file'])
+        new_files = set(files_at_now).difference(all_files)
+        logger.info(f'cur file num: {len(files_at_now)}, new: {len(new_files)}')
+
+        downloads = [(os.path.join(cfg.play_data_dir_remote, f), os.path.join(cfg.play_data_dir, f)) for f in new_files]
+        store_util.load(downloads)
+        for rp, lp in downloads:
+            filename_q.put_nowait(lp)
+        all_files.update(new_files)

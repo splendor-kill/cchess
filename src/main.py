@@ -1,5 +1,5 @@
 import multiprocessing as mp
-from logging import StreamHandler, basicConfig, DEBUG, getLogger
+from logging import StreamHandler, basicConfig, getLogger
 
 from xiangqi import Env, Camp, get_iccs_action_space
 
@@ -9,10 +9,10 @@ from config import cfg
 from player import Human, Playbook
 
 
-def setup_logger(log_filename):
+def setup_logger(log_filename, log_level):
     format_str = '##### %(processName)-15s %(filename)10s line %(lineno)-5d %(name)10s %(funcName)-10s: %(message)s'
     # basicConfig(level=DEBUG, format=format_str, stream=sys.stderr)
-    basicConfig(level=DEBUG, format=format_str, filename=log_filename)
+    basicConfig(level=log_level, format=format_str, filename=log_filename)
     stream_handler = StreamHandler()
     getLogger().addHandler(stream_handler)
 
@@ -71,11 +71,14 @@ if __name__ == '__main__':
     parser.add_argument('--human_color', default='red', choices=['red', 'black'], type=str)
     parser.add_argument('--cmd', help='what to do', choices=['self', 'opt', 'eval', 'sl', 'demo'])
     parser.add_argument('--pgn_file', help='demo by pgn')
+    parser.add_argument('--log', default='warning', help='logging level')
 
     args = parser.parse_args()
     cfg.update(load_cfg(args.config))
 
-    setup_logger(cfg.resource.main_log_path)
+    setup_logger(cfg.resource.main_log_path, args.log.upper())
+
+    logger = getLogger(__name__)
 
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)
@@ -83,7 +86,7 @@ if __name__ == '__main__':
     cfg.update(load_cfg(args.config))
     cfg.labels = get_iccs_action_space()
     cfg.n_labels = len(cfg.labels)
-    print(f'action space size: {cfg.n_labels}')
+    logger.info(f'action space size: {cfg.n_labels}')
     flipped = flip_ucci_labels(cfg.labels)
     cfg.unflipped_index = [cfg.labels.index(x) for x in flipped]
     # np.random.seed(0)
@@ -117,4 +120,4 @@ if __name__ == '__main__':
     play_a_game()
 
     elapsed = time.perf_counter() - s
-    print(f'play {n} games spent {elapsed} seconds in total, mean time: {elapsed / n}')
+    logger.info(f'play {n} games spent {elapsed} seconds in total, mean time: {elapsed / n}')

@@ -13,12 +13,19 @@
 
 - [ ] better model
 
+  - [ ] transformer, embedding pieces
+
 - [ ] 实验
 
   - [ ] state用己方视角表示或用中立表示是否有不同？
   - [ ] 不同action表示有什么影响？
   - [ ] 可变的action space，即学习新的action
   - [ ] off-line RL
+
+- [ ] adapt to docker + s3
+
+  - [ ] multi evaluators, trainers
+  - [ ] communication between docker containers
 
   
 

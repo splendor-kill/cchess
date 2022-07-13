@@ -1,5 +1,5 @@
 opts:
-  new: True
+  new: False
 
 
 eval:
@@ -78,38 +78,40 @@ resource:
   data_dir: "./data"
   pgn_dir: "./data/cleaned_pgns"
   model_dir: "./data/model"
-  model_best_config_path: "./data/model/model_best_config.json"
-  model_best_weight_path: "./data/model/model_best_weight.h5"
+  model_best_config_path: "model_best_config.json"
+  model_best_weight_path: "model_best_weight.h5"
   distributed_storage: "s3"
   dist_play_data: True
   dist_next_gen_model: True
 
-  model_best_distributed_s3_url: ""
-  model_best_distributed_s3_access_key: ""
-  model_best_distributed_s3_secret_key: ""
-  model_best_dir_remote: "xq-best-model"
+  distributed_s3_url: ""
+  distributed_s3_access_key: ""
+  distributed_s3_secret_key: ""
+  distributed_s3_bucket: ""
+  model_best_dir_remote: "xq_best_model/"
 
   model_best_distributed_ftp_server: ""
   model_best_distributed_ftp_user: ""
   model_best_distributed_ftp_password: ""
   model_best_distributed_ftp_remote_path: "/xq-best-model/"
 
-  next_generation_model_dir: "./data/model/next_generation"
-  next_generation_model_dir_remote: "xq-model-next-gen"
-  next_generation_model_dirname_tmpl: "model_%s"
-  next_generation_model_config_filename: "model_config.json"
-  next_generation_model_weight_filename: "model_weight.h5"
+  next_gen_model_dir: "./data/model/next_generation"
+  next_gen_model_dir_remote: "xq-model-next-gen"
+  next_gen_model_dirname_tmpl: "model_%s"
+  next_gen_model_config_filename: "model_config.json"
+  next_gen_model_weight_filename: "model_weight.h5"
 
   play_data_dir: "./data/xq-play-data"
   play_data_dir_remote: "xq-play-data"
   play_data_filename_tmpl: "play_%s.json"
-  play_data_upper_limit: 0.8
+  disk_upper_limit: 0.8
 
   log_dir: "./logs"
   main_log_path: "./logs/main.log"
 
-  s3_carrier: "carrier.json"
+  s3_meta_dir: "meta/"
+  s3_best_model_notifier: "best_model.notifier"
   s3_play_data_notifier: "play_data.notifier"
-  s3_model_notifier: "model.notifier"
+  s3_ng_model_notifier: "ng_model.notifier"
   s3_play_data_rec_dir: "play_data_records"
   s3_model_rec_dir: "model_records"

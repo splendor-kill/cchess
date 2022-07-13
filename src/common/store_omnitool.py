@@ -15,14 +15,14 @@ class S3Helper:
             remote_path = os.path.join(self._server, self._remote_dir, remote_name)
             cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-            print(result)
+            logger.debug(result)
 
     def save(self, whats: Sequence[Tuple[str, str]]) -> None:
         for local_path, remote_name in whats:
             remote_path = os.path.join(self._server, self._remote_dir, remote_name)
             cmd = f'python3 -m omnitool.omni_storage -f upload_url -u {remote_path} -l {local_path}'
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
-            print(result)
+            logger.debug(result)
 
     def download_dirobj_async(self, from_where, to_where):
         """ the omnitool only has function of downloading the entire dir object, and cannot save as a new name
@@ -34,5 +34,5 @@ class S3Helper:
         remote_path = os.path.join(self._server, from_where)
         local_path = to_where
         cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
-        print(cmd)
+        logger.debug(cmd)
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)

@@ -4,14 +4,17 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
 from logging import getLogger
 from multiprocessing import Manager
+from random import random
 from threading import Thread
-from time import time
+from time import time, sleep
 from uuid import uuid4
 
 from keras import backend as K
 from xiangqi import Env, Camp
 
-from common.data_helper import get_game_data_filenames, write_game_data_to_file
+from common.data_helper import get_game_data_filenames, write_game_data_to_file, check_best_model_notifier, \
+    update_best_model_notifier
+from common.store_helper import get_store_util
 from model.helper import load_best_model_weight, save_as_best_model, \
     reload_best_model_weight_if_changed
 from model.nn import NNModel
@@ -25,14 +28,17 @@ def start(cfg):
 
 class SelfPlayWorker:
     def __init__(self, config):
-        self.dist_id = uuid4()
+        self.dist_id = uuid4().hex
         self.config = config
+        rc = self.config.resource
+        os.makedirs(rc.model_dir, exist_ok=True)
+        os.makedirs(rc.play_data_dir, exist_ok=True)
+        self.store_util = get_store_util(resource_config=rc)
         self.current_model = self.load_model()
         self.m = Manager()
         self.pipes_bundle = self.m.list([self.current_model.get_pipes(self.config.play.search_threads) for _ in
                                          range(self.config.play.max_processes)])
         self.buffer = []
-
 
     def start(self):
         self.buffer.clear()
@@ -54,15 +60,23 @@ class SelfPlayWorker:
                 self.buffer += data
                 if (game_idx % self.config.playdata.nb_game_in_file) == 0:
                     self.flush_buffer()
-                    reload_best_model_weight_if_changed(self.current_model)
+                    reload_best_model_weight_if_changed(self.current_model, self.store_util)
                 futures.append(executor.submit(self_play_buffer, self.config, self.pipes_bundle))  # Keep it going
 
     def load_model(self):
         model = NNModel(self.config)
+        rc = self.config.resource
+        self.wait_best_model_notifier(rc, model)
+
         if self.config.opts.new or not load_best_model_weight(model):
             model.build()
-            os.makedirs(os.path.dirname(model.config.resource.model_best_config_path), exist_ok=True)
             save_as_best_model(model)
+            model_config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
+            model_weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
+            logger.info(f'upload model {model_weight_path}')
+            model.upload(model_config_path, model_weight_path)
+            update_best_model_notifier(self.store_util, rc, phase='init_done', did=self.dist_id)
+
         model.session = K.get_session()
         model.graph = model.session.graph
         return model
@@ -74,9 +88,9 @@ class SelfPlayWorker:
         rc = self.config.resource
         game_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
         path = os.path.join(rc.play_data_dir, rc.play_data_filename_tmpl % game_id)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
         logger.info(f"save play data to {path}")
-        thread = Thread(target=write_game_data_to_file, args=(path, self.buffer, rc))
+        thread = Thread(target=write_game_data_to_file, args=(path, self.buffer, rc),
+                        kwargs={'did': self.dist_id, 'time': game_id})
         thread.start()
         self.buffer = []
 
@@ -89,6 +103,39 @@ class SelfPlayWorker:
             return
         for i in range(len(files) - self.config.playdata.max_file_num):
             os.remove(files[i])
+
+    def wait_best_model_notifier(self, cfg, model):
+        start_time = time()
+        while True:
+            _, carrier = check_best_model_notifier(self.store_util, cfg)
+            if carrier is None:
+                update_best_model_notifier(self.store_util, cfg, phase='init', did=self.dist_id)
+            else:
+                logger.debug(carrier)
+                phase = carrier['phase']
+                if phase in ('init_done', 'updated'):
+                    if carrier['id'] != self.dist_id:
+                        logger.info('download model')
+                        config_path = os.path.join(cfg.model_dir, cfg.model_best_config_path)
+                        weight_path = os.path.join(cfg.model_dir, cfg.model_best_weight_path)
+                        model.download(config_path, weight_path)
+                        # model.load() should be successful
+                    else:
+                        path = os.path.join(cfg.model_dir, cfg.model_best_weight_path)
+                        assert os.path.exists(path)
+                    break
+                elif phase in ('init', 'updating'):
+                    if carrier['id'] != self.dist_id:
+                        # wait someone upload model
+                        sleep(random())
+                        elapse = time() - start_time
+                        if elapse < 1 * 60:
+                            continue
+                        else:
+                            break  # may someone failed to upload model
+                    else:
+                        # get the chance to upload model
+                        break
 
 
 def self_play_buffer(config, pipes_bundle):
@@ -119,13 +166,13 @@ def self_play_buffer(config, pipes_bundle):
         time_cost = time() - start_time
         cnt += 1
         cost += time_cost
-        print(f'step: {cnt}, time cost(sec.): {time_cost:.3f}, average: {cost / cnt:.3f}')
+        logger.debug(f'step: {cnt}, time cost(sec.): {time_cost:.3f}, average: {cost / cnt:.3f}')
         ob, reward, done, info = env.step(action)
         if done:
             extra = '' if info is None else f', info: {info}'
-            print(f'player {player.id.name}, reward: {reward}{extra}')
+            logger.debug(f'player {player.id.name}, reward: {reward}{extra}')
             break
-    print(f'average cost(sec.): {cost / cnt:.3f}')
+    logger.info(f'average cost(sec.): {cost / cnt:.3f}')
     player = players[env.cur_player]
     player.finish_game(reward)
     oppo = players[env.cur_player.opponent()]
