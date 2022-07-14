@@ -41,3 +41,26 @@ class S3Helper:
         cmd = f'MC_HOST_mys3={alias} mc cp -r {remote_path} {local_path}'
         logger.debug(cmd)
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('server', help='the s3 server url')
+    parser.add_argument('-a', help='s3 access key, or user name', required=True, metavar='ACCESS-KEY', dest='access')
+    parser.add_argument('-s', help='s3 secret key, or password', required=True, metavar='SECRET-KEY', dest='secret')
+    parser.add_argument('-b', help='s3 bucket', required=True, metavar='BUCKET', dest='bucket')
+    args = parser.parse_args()
+
+    client = Minio(args.server, access_key=args.access, secret_key=args.secret, secure=False)
+
+    buckets = client.list_buckets()
+    for bucket in buckets:
+        print(bucket.name, bucket.creation_date)
+
+    bucket = args.bucket
+    print(f'\nobjects in {bucket}:')
+    objects = client.list_objects(bucket)
+    for obj in objects:
+        print('  ', obj.object_name)
