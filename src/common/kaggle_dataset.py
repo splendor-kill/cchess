@@ -14,7 +14,7 @@ D_ACTIONS = {'+': '进', '-': '退', '.': '平'}
 d_pieces = dict(zip(EN_PIECES, PIECE_CHARS))
 
 
-def to_pgn(info, moves, wxf=False, pgns_dir='.'):
+def to_pgn(info, moves, wxf=False, pgns_dir='.', pgn_encoding='GB2312'):
     game_id = info.iloc[0]['gameID']
     date = info.iloc[0]['game_datetime']
     black_id = info.iloc[0]['blackID']
@@ -24,13 +24,13 @@ def to_pgn(info, moves, wxf=False, pgns_dir='.'):
     winner = info.iloc[0]['winner']
 
     date = date.strftime('%Y年%m月%d日')
-    d_results = {'red': '1-0', 'black': '0-1', 'draw': '1/2-1/2'}
+    d_results = {'red': '1-0', 'black': '0-1', 'tie': '1/2-1/2'}
     score = d_results[winner]
 
     wushi = {'e': 'b', 'h': 'n', 'E': 'B', 'H': 'N'}
 
     f_pgn = f'{game_id}.pgn'
-    with open(os.path.join(pgns_dir, f_pgn), 'w', encoding='GB2312') as fp:
+    with open(os.path.join(pgns_dir, f_pgn), 'w', encoding=pgn_encoding) as fp:
         fp.write('[Game "Chinese Chess"]\n')
         fp.write(f'[Date "{date}"]\n')
         if wxf:
@@ -107,13 +107,14 @@ def trans(move):
     return f'{prefix}{res_piece}{res_ff}{D_ACTIONS[op]}{res_nfr}'
 
 
-def main(data_dir, save_dir):
+def main(data_dir, save_dir, pgn_encoding):
     info_file = os.path.join(data_dir, 'gameinfo.csv')
     moves_file = os.path.join(data_dir, 'moves.csv')
     df1 = pd.read_csv(info_file, parse_dates=['game_datetime'])
     print(df1.shape)
     df2 = pd.read_csv(moves_file)
     print(df2.shape)
+    # df2['move'] = df2.apply(lambda row: row.move.upper() if row.side == 'red' else row.move.lower(), axis=1)
     df2['ch_move'] = df2.move.apply(trans)
 
     os.makedirs(save_dir, exist_ok=True)
@@ -124,7 +125,7 @@ def main(data_dir, save_dir):
         info = df1[df1.gameID == n]
         assert info.shape == (1, 7)
         print(n, dfx.shape[0], info.iloc[0]['winner'])
-        to_pgn(info, dfx, pgns_dir=save_dir)
+        to_pgn(info, dfx, pgns_dir=save_dir, pgn_encoding=pgn_encoding)
         cnt += 1
         # if cnt >= 1:
         #     break
@@ -138,6 +139,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('data_dir', type=str)
     parser.add_argument('--pgn_dir', type=str, default='pgns')
+    parser.add_argument('--pgn_encoding', type=str, default='GB2312')
     args = parser.parse_args()
 
-    main(args.data_dir, args.pgn_dir)
+    main(args.data_dir, args.pgn_dir, args.pgn_encoding)

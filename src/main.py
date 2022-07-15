@@ -36,11 +36,12 @@ def play_a_game(opening=None):
     print('game over.')
 
 
-def demo(pgn):
+def demo(pgn, cfg):
     from common.pgn_parser import get_moves_and_result
     moves, result = get_moves_and_result(pgn)
 
-    players = {Camp.RED: Playbook(Camp.RED, moves[::2], result), Camp.BLACK: Playbook(Camp.BLACK, moves[1::2], result)}
+    players = {Camp.RED: Playbook(Camp.RED, moves[::2], result, cfg),
+               Camp.BLACK: Playbook(Camp.BLACK, moves[1::2], result, cfg)}
     env = Env()
     for p in players.values():
         p.env = env
@@ -113,7 +114,7 @@ if __name__ == '__main__':
         sl.start(cfg)
         sys.exit(0)
     elif args.cmd == 'demo':
-        demo(args.pgn_file)
+        demo(args.pgn_file, cfg)
         sys.exit(0)
 
     n = 1

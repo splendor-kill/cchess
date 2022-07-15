@@ -1,7 +1,12 @@
+from logging import getLogger
+
+import numpy as np
 from xiangqi import Camp, Force, Env
 from xiangqi.board import parse_action, ACTION_ALIAS, ROW_INDICATOR_ALIAS, RowIndicator, to_iccs_action
 from xiangqi.constants import Action
 from xiangqi.piece import piece_2_char, APPEAR_RED, APPEAR_BLACK, ENDC
+
+logger = getLogger(__name__)
 
 
 class Player:
@@ -124,11 +129,15 @@ class NoBrain(Player):
 
 
 class Playbook(Player):
-    def __init__(self, id_, moves, result):
+    def __init__(self, id_, moves, result, config):
         super().__init__(id_)
         self.moves = moves
         self.step = 0
         self.result = result
+        self.sar = []
+        self.labels_n = config.n_labels
+        self.labels = config.labels
+        self.move_lookup = {move: i for move, i in zip(self.labels, range(self.labels_n))}
 
     def make_decision(self, **kwargs):
         valid_actions = kwargs['valid_actions']
@@ -148,8 +157,26 @@ class Playbook(Player):
                 return {'action': Action.RESIGN}
 
         move = self.moves[self.step]
-        print(f'{self.id.name} {move}')
+        # print(f'{self.id.name} {move}')
         self.step += 1
         piece, dst = parse_action(move, camp, board)
         ucci_action = to_iccs_action({'piece': piece, 'dst': dst})
+        policy = self.calc_policy(ucci_action)
+        self.sar.append([fen, list(policy)])
         return ucci_action
+
+    def finish_game(self, z):
+        """
+        When game is done, updates the value of all past moves based on the result.
+
+        :param self:
+        :param z: win=1, lose=-1, draw=0
+        :return:
+        """
+        for sa in self.sar:  # add this game winner result to all past moves.
+            sa += [z]
+
+    def calc_policy(self, action):
+        policy = np.zeros(self.labels_n)
+        policy[self.move_lookup[action]] = 1
+        return policy

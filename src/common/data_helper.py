@@ -133,7 +133,7 @@ def upload_replay_and_notify(store_util, cfg, path, did=None, time=None, digest=
         json.dump(notify, f)
     notifier_remote = os.path.join(cfg.s3_meta_dir, cfg.s3_play_data_notifier)
     store_util.save([(path, notifier_remote)])
-    os.remove(path)
+    # os.remove(path)  # potential bug, another proc is updating
 
 
 def upload_ng_model_and_notify(store_util, cfg, path, time=None):
