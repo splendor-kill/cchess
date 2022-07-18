@@ -1,4 +1,4 @@
-from lark import Lark, Tree, Transformer, Visitor, Token
+from lark import Lark, Visitor, Token
 
 grammar = r"""
 start: pgn+
@@ -22,7 +22,9 @@ opt_line: "[" WORD WSI+ ESC_STR "]"
 
 moves: INT "." WSI+ move WSI+ move WS+ VAR? COMMENT?
 move: /.{4}/
-result_line: INT "." WSI+ (move WS+)? SCORE
+result_line: _red_win_result | _black_win_result
+_red_win_result: INT "." WSI+ move WS+ SCORE
+_black_win_result: SCORE
 
 post: "="+ NL (/[^\[]+/ NL?)*
 """
@@ -36,15 +38,15 @@ def get_moves_and_result(pgn_file):
     tree = pgn_parser.parse(content)
 
     class MovesResult(Visitor):
-        def result_line(self, tree):
+        def result_line(self, t):
             nonlocal result
-            for inst in tree.children:
+            for inst in t.children:
                 if isinstance(inst, Token) and inst.type == 'SCORE':
                     result = inst.value
 
-        def move(self, tree):
+        def move(self, t):
             nonlocal moves
-            mv = tree.children[0]
+            mv = t.children[0]
             moves.append(mv.value)
 
     moves = []
@@ -59,4 +61,5 @@ if __name__ == '__main__':
     file = sys.argv[1]
     moves, result = get_moves_and_result(file)
     print(result)
-    print(moves)
+    print(f'n steps: {len(moves)}')
+    print(', '.join(moves))
