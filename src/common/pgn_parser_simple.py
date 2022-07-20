@@ -1,11 +1,10 @@
 import re
 from enum import IntEnum
 
-
 PAT_OPTION = re.compile(r'\[(\w+)\s"(.*)"\]')
 PAT_MOVE_MOVE = re.compile(r'\d+\.\s(.{4})\s(.{4})')
 PAT_MOVE_RESULT = re.compile(r'\d+\.\s(.{4})\s(\d(/2)?-\d(/2)?)')
-PAT_RESULT = re.compile(r'\d+\.\s(\d(/2)?-\d(/2)?)')
+PAT_RESULT = re.compile(r'(\d+\.\s)?(\d(/2)?-\d(/2)?)')
 
 
 class State(IntEnum):
@@ -28,15 +27,14 @@ def handle_head(line: str, game: dict):
 
 
 def handle_body(line: str, game: dict):
+    m = PAT_RESULT.match(line)
+    if m:
+        game['Result'] = m.group(2)
+        return State.BODY
     parts = line.split()
     if not parts[0][:-1].isdigit():
         return State.ERR
     n_parts = len(parts)
-    if n_parts == 2:
-        if not PAT_RESULT.match(line):
-            return State.ERR
-        game['Result'] = parts[1]
-        return State.BODY
     if n_parts == 3:
         m = PAT_MOVE_RESULT.match(line)
         if m:

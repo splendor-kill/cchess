@@ -51,7 +51,7 @@ class SupervisedLearningWorker:
         game_idx = 0
         start_time = time()
         n_failed = 0
-        with ProcessPoolExecutor(max_workers=7) as executor:
+        with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
             games = self.get_games_from_all_files()
 
             for env, data in executor.map(get_buffer, repeat(self.config), games):
@@ -78,7 +78,7 @@ class SupervisedLearningWorker:
         :return list(chess.pgn.Game): the games
         """
         files = find_pgn_files(self.config.resource.pgn_dir)
-        print(len(files))
+        print(f'there are {len(files)} pgn files been found int total')
         games = []
         for filename in files:
             games.extend(get_games_from_file(filename))
@@ -115,9 +115,9 @@ def get_buffer(config, game: dict) -> Tuple[Env, list]:
 
     result = game['Result']
     moves = game['moves']
-    red_elo, black_elo = int(game.get('RedElo', 100)), int(game.get('BlackElo', 100))
-    red_weight = clip_elo_policy(config, red_elo)
-    black_weight = clip_elo_policy(config, black_elo)
+    # red_elo, black_elo = int(game.get('RedElo', 100)), int(game.get('BlackElo', 100))
+    # red_weight = clip_elo_policy(config, red_elo)
+    # black_weight = clip_elo_policy(config, black_elo)
 
     players = {Camp.RED: Playbook(Camp.RED, moves[::2], result, config),
                Camp.BLACK: Playbook(Camp.BLACK, moves[1::2], result, config)}

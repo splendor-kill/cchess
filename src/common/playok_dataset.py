@@ -131,4 +131,5 @@ if __name__ == '__main__':
     if args.file:
         to_wushi_pgn(args.file)
     else:
+        os.makedirs(pgn_dir, exist_ok=True)
         convert_dir(args.data_dir)
