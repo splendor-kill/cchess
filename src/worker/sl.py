@@ -4,15 +4,14 @@ Contains the worker for training the model using recorded game data rather than 
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from itertools import repeat
+from itertools import repeat, islice
 from logging import getLogger
 from threading import Thread
-from time import time
 from typing import Tuple
 
 from xiangqi import Env, Camp
 
-from common.data_helper import write_game_data_to_file, find_pgn_files
+from common.data_helper import write_game_data_to_file, find_pgn_files, iter_pgn_files
 from common.pgn_parser_simple import get_games_from_file
 
 logger = getLogger(__name__)
@@ -43,30 +42,24 @@ class SupervisedLearningWorker:
         self.buffer = []
 
     def start(self):
-        """
-        Start the actual training.
-        """
         self.buffer = []
-        # noinspection PyAttributeOutsideInit
         game_idx = 0
-        start_time = time()
+        # start_time = time()
         n_failed = 0
-        with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
-            games = self.get_games_from_all_files()
 
-            for env, data in executor.map(get_buffer, repeat(self.config), games):
-                game_idx += 1
-                if not data:
-                    n_failed += 1
-                    continue
-                self.buffer += data
-                if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
-                    self.flush_buffer()
-                end_time = time()
-                winner = env.winner.name if env.winner is not None else str(env.winner)
-                logger.debug(f'game {game_idx:4} time={(end_time - start_time):.3f}s '
-                             f'n_steps={env.n_steps:3} {winner}')
-                start_time = end_time
+        pgn_iter = iter_pgn_files(self.config.resource.pgn_dir)
+        batch_pgn = self.config.playdata.sl_nb_game_in_file * self.config.playdata.max_file_num
+        for games in self.get_games_from_files(pgn_iter, batch_pgn):
+            with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
+                results = executor.map(get_buffer, repeat(self.config), games)
+                for env, data in results:
+                    game_idx += 1
+                    if not data:
+                        n_failed += 1
+                        continue
+                    self.buffer += data
+                    if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
+                        self.flush_buffer()
 
         print(f'failed: {n_failed}, total: {game_idx}, helpful: {1 - n_failed / game_idx}')
         if len(self.buffer) > 0:
@@ -84,6 +77,16 @@ class SupervisedLearningWorker:
             games.extend(get_games_from_file(filename))
         print("done reading")
         return games
+
+    def get_games_from_files(self, iterable, size):
+        it = iter(iterable)
+        while True:
+            games = []
+            for filename in islice(it, size):
+                games.extend(get_games_from_file(filename))
+            if not games:
+                break
+            yield games
 
     def flush_buffer(self):
         """

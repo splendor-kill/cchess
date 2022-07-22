@@ -4,6 +4,7 @@ Various helper functions for working with the data used in this app
 import filecmp
 import json
 import os
+import pathlib
 from glob import glob
 from logging import getLogger
 from uuid import uuid4
@@ -15,6 +16,10 @@ def find_pgn_files(directory, pattern='*.pgn'):
     dir_pattern = os.path.join(directory, pattern)
     files = list(sorted(glob(dir_pattern)))
     return files
+
+
+def iter_pgn_files(directory, pattern='*.pgn'):
+    return pathlib.Path(directory).glob(pattern)
 
 
 def get_game_data_filenames(rc):
