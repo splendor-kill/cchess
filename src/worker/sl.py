@@ -44,13 +44,12 @@ class SupervisedLearningWorker:
     def start(self):
         self.buffer = []
         game_idx = 0
-        # start_time = time()
         n_failed = 0
 
         pgn_iter = iter_pgn_files(self.config.resource.pgn_dir)
         batch_pgn = self.config.playdata.sl_nb_game_in_file * self.config.playdata.max_file_num
-        for games in self.get_games_from_files(pgn_iter, batch_pgn):
-            with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
+        with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
+            for games in self.get_games_from_files(pgn_iter, batch_pgn):
                 results = executor.map(get_buffer, repeat(self.config), games)
                 for env, data in results:
                     game_idx += 1
