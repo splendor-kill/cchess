@@ -1,4 +1,5 @@
 import re
+import sys
 from enum import IntEnum
 
 PAT_OPTION = re.compile(r'\[(\w+)\s"(.*)"\]')
@@ -60,15 +61,19 @@ def get_games_from_file(filename):
                 games.append(game)
                 game = None
 
+        line_consumed = True
         while state not in (State.ERR, State.END):
-            try:
-                line = next(fp)
-            except StopIteration:
-                state = State.END
-                handle_complete(games)
-                break
-            line = line.strip()
+            if line_consumed:
+                try:
+                    line = next(fp)
+                except StopIteration:
+                    state = State.END
+                    handle_complete(games)
+                    break
+                line = line.strip()
+
             if state == State.IDLE:
+                line_consumed = True
                 if line.startswith('['):
                     state = State.HEAD
                     game = {'moves': []}
@@ -77,6 +82,7 @@ def get_games_from_file(filename):
                     # keep State.IDLE
                     continue
             elif state == State.HEAD:
+                line_consumed = True
                 if line.startswith('['):
                     # keep State.HEAD
                     state = handle_head(line, game)
@@ -86,26 +92,34 @@ def get_games_from_file(filename):
                 else:
                     state = State.ERR
             elif state == State.BODY:
+                line_consumed = True
                 if not line:
                     state = State.IDLE
                     handle_complete(games)
                 elif not line[0].isdigit():
                     state = State.POST
+                    line_consumed = False  # this is the first line under POST
                 else:
                     # keep State.BODY
                     state = handle_body(line, game)
             elif state == State.POST:
+                if game is not None:
+                    handle_complete(games)
+                    game = None
+                line_consumed = True
                 if not line:
+                    state = State.IDLE
+                elif line.startswith('['):
+                    state = State.IDLE
+                    line_consumed = False  # start a new game replay directly
+                else:
                     # keep State.POST
                     pass
-                else:
-                    state = State.IDLE
-                    handle_complete(games)
-    print(f'end with state: {state.name}, there are {len(games)} games in total.')
+
+    print(f'end with state: {state.name}, there are {len(games)} games in {filename}.')
     return games
 
 
 if __name__ == '__main__':
-    file = './data/7eb106f1_utf8.pgn'
-    # file = './data/merged.pgn'
+    file = sys.argv[1]
     get_games_from_file(file)
