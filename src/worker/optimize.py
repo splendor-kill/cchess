@@ -194,23 +194,24 @@ class OptimizeWorker:
         model = NNModel(self.config)
         rc = self.config.resource
 
-        while True:
-            _, carrier = check_best_model_notifier(self.store_util, rc)
-            if carrier is None:
-                logger.info('no model found')
-                sleep(1)
-                continue
-            logger.debug(carrier)
-            phase = carrier['phase']
-            if phase in ('init_done', 'updated'):
-                logger.info('download model')
-                config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
-                weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
-                model.download(config_path, weight_path)
-                break
-            else:  # in ('init', 'updating')
-                sleep(1)
-                continue
+        if self.config.model.distributed:
+            while True:
+                _, carrier = check_best_model_notifier(self.store_util, rc)
+                if carrier is None:
+                    logger.info('no model found')
+                    sleep(1)
+                    continue
+                logger.debug(carrier)
+                phase = carrier['phase']
+                if phase in ('init_done', 'updated'):
+                    logger.info('download model')
+                    config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
+                    weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
+                    model.download(config_path, weight_path)
+                    break
+                else:  # in ('init', 'updating')
+                    sleep(1)
+                    continue
 
         if not load_best_model_weight(model):
             raise RuntimeError('load model failed.')
@@ -220,6 +221,8 @@ class OptimizeWorker:
 def load_data_from_file(filename, handled_q):
     data = read_game_data_from_file(filename)
     handled_q.put_nowait(filename)
+    if data is None:
+        return np.array([], np.float32), np.array([], np.float32), np.array([], np.float32)
     return convert_to_cheating_data(data)
 
 
