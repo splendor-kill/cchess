@@ -53,7 +53,7 @@ def read_game_data_from_file(path):
         with open(path, "rt") as f:
             return json.load(f)
     except Exception as e:
-        logger.error(e)
+        logger.error('%s: %s', e, path)
 
 
 def check_best_model_notifier(store_util, cfg):

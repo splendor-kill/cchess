@@ -1,12 +1,17 @@
 import os
+import sys
 from logging import getLogger
 from multiprocessing import Manager
 
+import tensorflow as tf
 from flask import Flask, jsonify, request
 from flask_cors import CORS, cross_origin
 from xiangqi import Camp, Env, get_iccs_action_space
 
-import sys
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+
 sys.path.append('../')
 
 from model.nn import NNModel
@@ -25,8 +30,8 @@ print(f'action space size: {cfg.n_labels}')
 flipped = flip_ucci_labels(cfg.labels)
 cfg.unflipped_index = [cfg.labels.index(x) for x in flipped]
 
-nn_model_config_path = cfg.resource.model_best_config_path
-nn_model_weight_path = cfg.resource.model_best_weight_path
+nn_model_config_path = os.path.join('../..', cfg.resource.model_dir, cfg.resource.model_best_config_path)
+nn_model_weight_path = os.path.join('../..', cfg.resource.model_dir, cfg.resource.model_best_weight_path)
 print(os.path.abspath(nn_model_config_path))
 print(os.path.exists(nn_model_weight_path))
 
@@ -44,7 +49,6 @@ pipes_strand_r = pipes_bundle_r.pop()
 
 pipes_bundle_b = m.list([model.get_pipes(cfg.play.search_threads) for _ in range(cfg.play.max_processes)])
 pipes_strand_b = pipes_bundle_b.pop()
-
 
 players = {
     Camp.RED: MCTSPlayer(Camp.RED, cfg, pipes_strand=pipes_strand_r, play_config=cfg.play),
