@@ -6,7 +6,7 @@ import os
 import queue
 import shutil
 from collections import deque
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from logging import getLogger
 from multiprocessing import Process, Manager
@@ -47,7 +47,6 @@ class OptimizeWorker:
             target policy network values (calculated based on visit stats
                 for each state during the game), and target value network values (calculated based on
                     who actually won the game after that state)
-        :ivar ProcessPoolExecutor executor: executor for running all of the training processes
     """
 
     def __init__(self, config):
@@ -78,6 +77,7 @@ class OptimizeWorker:
         rc = self.config.resource
 
         files = get_game_data_filenames(rc)
+        logger.info(f'there are {len(files)} sar files')
         for f in files:
             self.filenames.put_nowait(f)
         if rc.dist_play_data:
@@ -94,11 +94,11 @@ class OptimizeWorker:
                 continue
             total_steps += steps
             self.save_current_model()
-            a, b, c = self.dataset
-            while len(a) > self.config.trainer.dataset_size / 2:
+            s, a, r = self.dataset
+            while len(s) > self.config.trainer.dataset_size / 4:
+                s.popleft()
                 a.popleft()
-                b.popleft()
-                c.popleft()
+                r.popleft()
 
             if rc.dist_play_data and not is_disk_enough(rc.disk_upper_limit):
                 to_del = []
@@ -158,21 +158,32 @@ class OptimizeWorker:
         """
         Fills the self.dataset queues with data from the training dataset.
         """
-        futures = deque()
-        with ProcessPoolExecutor(max_workers=self.config.trainer.cleaning_processes) as executor:
-            for _ in range(self.config.trainer.cleaning_processes):
+        n_workers = self.config.trainer.cleaning_processes
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            futures = []
+            for _ in range(n_workers):
                 if self.filenames.empty():
                     break
-                filename = self.filenames.get()
-                logger.debug(f"loading data from {filename}")
-                futures.append(executor.submit(load_data_from_file, filename, self.handled_files))
-            while futures and len(self.dataset[0]) < self.config.trainer.dataset_size:
-                for x, y in zip(self.dataset, futures.popleft().result()):
-                    x.extend(y)
+                try:
+                    filename = self.filenames.get_nowait()
+                except queue.Empty:
+                    break
+                futures.append(executor.submit(load_data_from_file, filename, self.handled_files, self.config))
+
+            while futures:
+                future = next(as_completed(futures))
+                futures.remove(future)
                 if not self.filenames.empty():
-                    filename = self.filenames.get()
-                    logger.debug(f"loading data from {filename}")
-                    futures.append(executor.submit(load_data_from_file, filename, self.handled_files))
+                    try:
+                        filename = self.filenames.get_nowait()
+                    except queue.Empty:
+                        pass
+                    futures.append(executor.submit(load_data_from_file, filename, self.handled_files, self.config))
+                sar = future.result()
+                for x, y in zip(self.dataset, sar):
+                    x.extend(y)
+                if len(self.dataset[0]) >= self.config.trainer.dataset_size:
+                    break
 
     def collect_all_loaded_data(self):
         """
@@ -218,15 +229,16 @@ class OptimizeWorker:
         return model
 
 
-def load_data_from_file(filename, handled_q):
+def load_data_from_file(filename, handled_q, cfg):
+    logger.debug(f"loading data from {filename}")
     data = read_game_data_from_file(filename)
     handled_q.put_nowait(filename)
     if data is None:
         return np.array([], np.float32), np.array([], np.float32), np.array([], np.float32)
-    return convert_to_cheating_data(data)
+    return convert_to_cheating_data(data, cfg)
 
 
-def convert_to_cheating_data(data):
+def convert_to_cheating_data(data, cfg):
     """
     :param data: format is SelfPlayWorker.buffer
     :return:
@@ -239,7 +251,7 @@ def convert_to_cheating_data(data):
         state_planes = env.canonical_input_planes()
 
         if not env.cur_player == Camp.RED:
-            policy = flip_policy(policy)
+            policy = flip_policy(policy, cfg)
 
         move_number = int(state_fen.split(' ')[5])
         # reduces the noise of the opening... plz train faster

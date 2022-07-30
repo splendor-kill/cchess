@@ -89,7 +89,7 @@ class SelfPlayWorker:
         game_id = datetime.now().strftime("%Y%m%d-%H%M%S.%f")
         path = os.path.join(rc.play_data_dir, rc.play_data_filename_tmpl % game_id)
         logger.info(f"save play data to {path}")
-        thread = Thread(target=write_game_data_to_file, args=(path, self.buffer, rc),
+        thread = Thread(target=write_game_data_to_file, args=(path, self.buffer, self.config),
                         kwargs={'did': self.dist_id, 'time': game_id})
         thread.start()
         self.buffer = []

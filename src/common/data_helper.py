@@ -5,6 +5,7 @@ import filecmp
 import json
 import os
 import pathlib
+import tarfile
 from glob import glob
 from logging import getLogger
 from uuid import uuid4
@@ -34,18 +35,22 @@ def get_next_gen_model_dirs(rc):
     return dirs
 
 
-def write_game_data_to_file(path, data, rc=None, **kwargs):
+def write_game_data_to_file(path, data, cfg, **kwargs):
     try:
         with open(path, "wt") as f:
             json.dump(data, f)
     except Exception as e:
         logger.error(e)
 
+    rc = cfg.resource
     if rc and rc.dist_play_data:
         from common.store_helper import get_store_util
         store_util = get_store_util(resource_config=rc)
         upload_replay_and_notify(store_util, rc, path, **kwargs)
         os.remove(path)
+
+    if cfg.playdata.archive:
+        archive_remove_play_data(cfg)
 
 
 def read_game_data_from_file(path):
@@ -160,3 +165,30 @@ def upload_ng_model_and_notify(store_util, cfg, path, time=None):
     notifier_remote = os.path.join(cfg.s3_meta_dir, cfg.s3_ng_model_notifier)
     store_util.save([(path, notifier_remote)])
     os.remove(path)
+
+
+def archive_remove_play_data(cfg):
+    """
+    archive & remove play data
+    """
+    sz = cfg.playdata.max_file_num
+    files = get_game_data_filenames(cfg.resource)
+    if len(files) < sz:
+        return
+    batch = files[-sz:]
+
+    head = batch[0]
+    dir_ = os.path.dirname(head)
+    bn = os.path.basename(head)
+    tar_name = f'{os.path.splitext(bn[0])[0]}.tar.gz'
+    tar_path = os.path.join(dir_, tar_name)
+    archive(batch, tar_path)
+
+    for f in batch:
+        os.remove(f)
+
+
+def archive(files, to_file):
+    with tarfile.open(to_file, mode='w:gz') as fp:
+        for f in files:
+            fp.add(f, arcname=os.path.basename(f))

@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import os
 from logging import StreamHandler, basicConfig, getLogger
 
 from xiangqi import Env, Camp, get_iccs_action_space
@@ -83,6 +84,8 @@ if __name__ == '__main__':
 
     mp.set_start_method('spawn')
     sys.setrecursionlimit(10000)
+
+    os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
     cfg.update(load_cfg(args.config))
     cfg.labels = get_iccs_action_space()
