@@ -1,6 +1,9 @@
 import os
 import subprocess
+from logging import getLogger
 from typing import Tuple, Sequence
+
+logger = getLogger(__name__)
 
 
 class S3Helper:
@@ -12,15 +15,17 @@ class S3Helper:
 
     def load(self, whats: Sequence[Tuple[str, str]]) -> None:
         for remote_name, local_path in whats:
-            remote_path = os.path.join(self._server, self._remote_dir, remote_name)
-            cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
+            local_path = os.path.abspath(local_path)
+            cmd = f'python3 -m omnitool.omni_storage dl {self._remote_dir} {remote_name} {local_path}'
+            logger.debug(cmd)
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
             logger.debug(result)
 
     def save(self, whats: Sequence[Tuple[str, str]]) -> None:
         for local_path, remote_name in whats:
-            remote_path = os.path.join(self._server, self._remote_dir, remote_name)
-            cmd = f'python3 -m omnitool.omni_storage -f upload_url -u {remote_path} -l {local_path}'
+            local_path = os.path.abspath(local_path)
+            cmd = f'python3 -m omnitool.omni_storage ul {self._remote_dir} {local_path} {remote_name}'
+            logger.debug(cmd)
             result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE)
             logger.debug(result)
 
@@ -31,8 +36,8 @@ class S3Helper:
         :param to_where: local dir name hold the remote dir object name
         :return: a subprocess in order the caller can control the download progress
         """
-        remote_path = os.path.join(self._server, from_where)
         local_path = to_where
-        cmd = f'python3 -m omnitool.omni_storage -f download_url -u {remote_path} -l {local_path}'
+        local_path = os.path.abspath(local_path)
+        cmd = f'python3 -m omnitool.omni_storage dl {self._remote_dir} {from_where} {local_path}'
         logger.debug(cmd)
         return subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)

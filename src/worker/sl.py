@@ -59,7 +59,6 @@ class SupervisedLearningWorker:
                     self.buffer += data
                     if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
                         self.flush_buffer()
-
         print(f'failed: {n_failed}, total: {game_idx}, helpful: {1 - n_failed / game_idx}')
         if len(self.buffer) > 0:
             self.flush_buffer()
@@ -78,10 +77,9 @@ class SupervisedLearningWorker:
         return games
 
     def get_games_from_files(self, iterable, size):
-        it = iter(iterable)
         while True:
             games = []
-            for filename in islice(it, size):
+            for filename in islice(iterable, size):
                 games.extend(get_games_from_file(filename))
             if not games:
                 break
