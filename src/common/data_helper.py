@@ -42,15 +42,15 @@ def write_game_data_to_file(path, data, cfg, **kwargs):
     except Exception as e:
         logger.error(e)
 
+    if cfg.playdata.archive:
+        path = archive_remove_play_data(path, cfg)  # change name
+
     rc = cfg.resource
     if rc and rc.dist_play_data:
         from common.store_helper import get_store_util
         store_util = get_store_util(resource_config=rc)
         upload_replay_and_notify(store_util, rc, path, **kwargs)
         os.remove(path)
-
-    if cfg.playdata.archive:
-        archive_remove_play_data(cfg)
 
 
 def read_game_data_from_file(path):
@@ -167,28 +167,19 @@ def upload_ng_model_and_notify(store_util, cfg, path, time=None):
     os.remove(path)
 
 
-def archive_remove_play_data(cfg):
+def archive_remove_play_data(path, cfg):
     """
     archive & remove play data
     """
-    sz = cfg.playdata.max_file_num
-    files = get_game_data_filenames(cfg.resource)
-    if len(files) < sz:
-        return
-    batch = files[-sz:]
-
-    head = batch[0]
-    dir_ = os.path.dirname(head)
-    bn = os.path.basename(head)
-    tar_name = f'{os.path.splitext(bn[0])[0]}.tar.gz'
+    dir_ = os.path.dirname(path)
+    bn = os.path.basename(path)
+    tar_name = f'{os.path.splitext(bn)[0]}.tar.gz'
     tar_path = os.path.join(dir_, tar_name)
-    archive(batch, tar_path)
+    archive(path, tar_path)
+    os.remove(path)
+    return tar_path
 
-    for f in batch:
-        os.remove(f)
 
-
-def archive(files, to_file):
+def archive(file, to_file):
     with tarfile.open(to_file, mode='w:gz') as fp:
-        for f in files:
-            fp.add(f, arcname=os.path.basename(f))
+        fp.add(file, arcname=os.path.basename(file))
