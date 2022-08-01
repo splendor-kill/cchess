@@ -180,7 +180,7 @@ def archive_remove_play_data(cfg):
     head = batch[0]
     dir_ = os.path.dirname(head)
     bn = os.path.basename(head)
-    tar_name = f'{os.path.splitext(bn[0])[0]}.tar.gz'
+    tar_name = f'{os.path.splitext(bn)[0]}.tar.gz'
     tar_path = os.path.join(dir_, tar_name)
     archive(batch, tar_path)
 
