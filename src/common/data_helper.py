@@ -43,7 +43,9 @@ def write_game_data_to_file(path, data, cfg, **kwargs):
         logger.error(e)
 
     if cfg.playdata.archive:
-        path = archive_remove_play_data(path, cfg)  # change name
+        path_new = archive_remove_play_data(path)  # change name
+        os.remove(path)
+        path = path_new
 
     rc = cfg.resource
     if rc and rc.dist_play_data:
@@ -167,7 +169,7 @@ def upload_ng_model_and_notify(store_util, cfg, path, time=None):
     os.remove(path)
 
 
-def archive_remove_play_data(path, cfg):
+def archive_remove_play_data(path):
     """
     archive & remove play data
     """
@@ -183,3 +185,8 @@ def archive_remove_play_data(path, cfg):
 def archive(file, to_file):
     with tarfile.open(to_file, mode='w:gz') as fp:
         fp.add(file, arcname=os.path.basename(file))
+
+
+def untar(tarball, to_dir):
+    with tarfile.open(tarball) as fp:
+        fp.extractall(path=to_dir)
