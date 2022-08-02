@@ -2,7 +2,7 @@ import re
 import sys
 from enum import IntEnum
 
-PAT_OPTION = re.compile(r'\[(\w+)\s"(.*)"\]')
+PAT_OPTION = re.compile(r'\[(\w+)\s"(.*)"]')
 PAT_MOVE_MOVE = re.compile(r'\d+\.\s(.{4})\s(.{4})')
 PAT_MOVE_RESULT = re.compile(r'\d+\.\s(.{4})\s(\d(/2)?-\d(/2)?)')
 PAT_RESULT = re.compile(r'(\d+\.\s)?(\d(/2)?-\d(/2)?)')
@@ -49,17 +49,9 @@ def handle_body(line: str, game: dict):
 
 
 def get_games_from_file(filename):
-    games = []
-
     with open(filename) as fp:
         state = State.IDLE
         game = None
-
-        def handle_complete(games: list):
-            nonlocal game
-            if game is not None:
-                games.append(game)
-                game = None
 
         line_consumed = True
         while state not in (State.ERR, State.END):
@@ -67,17 +59,17 @@ def get_games_from_file(filename):
                 try:
                     line = next(fp)
                 except StopIteration:
-                    state = State.END
-                    handle_complete(games)
+                    # end with State.END
+                    if game is not None:
+                        yield game
                     break
                 line = line.strip()
 
             if state == State.IDLE:
                 line_consumed = True
                 if line.startswith('['):
-                    state = State.HEAD
                     game = {'moves': []}
-                    state = handle_head(line, game)
+                    state = handle_head(line, game)  # expect State.HEAD
                 else:
                     # keep State.IDLE
                     continue
@@ -87,15 +79,16 @@ def get_games_from_file(filename):
                     # keep State.HEAD
                     state = handle_head(line, game)
                 elif line[0].isdigit():
-                    state = State.BODY
-                    state = handle_body(line, game)
+                    state = handle_body(line, game)  # expect State.BODY
                 else:
                     state = State.ERR
             elif state == State.BODY:
                 line_consumed = True
                 if not line:
                     state = State.IDLE
-                    handle_complete(games)
+                    if game is not None:
+                        yield game
+                        game = None
                 elif not line[0].isdigit():
                     state = State.POST
                     line_consumed = False  # this is the first line under POST
@@ -104,7 +97,7 @@ def get_games_from_file(filename):
                     state = handle_body(line, game)
             elif state == State.POST:
                 if game is not None:
-                    handle_complete(games)
+                    yield game
                     game = None
                 line_consumed = True
                 if not line:
@@ -116,10 +109,12 @@ def get_games_from_file(filename):
                     # keep State.POST
                     pass
 
-    print(f'end with state: {state.name}, there are {len(games)} games in {filename}.')
-    return games
+    print(f'end with state: {state.name}')
 
 
 if __name__ == '__main__':
     file = sys.argv[1]
-    get_games_from_file(file)
+    games = get_games_from_file(file)
+    for i, g in enumerate(games):
+        pass
+    print(f'there are {i + 1} games in {file}.')
