@@ -8,6 +8,7 @@ import shutil
 from collections import deque
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
+from glob import glob
 from logging import getLogger
 from multiprocessing import Process, Manager
 from time import sleep
@@ -19,7 +20,7 @@ from xiangqi import Env, Camp
 
 from agent.helper import flip_policy, testeval
 from common.data_helper import get_game_data_filenames, read_game_data_from_file, upload_ng_model_and_notify, \
-    check_play_data_notifier, check_best_model_notifier
+    check_play_data_notifier, check_best_model_notifier, untar
 from common.store_helper import get_store_util
 from common.utils import is_disk_enough, del_some_files
 from model.helper import load_best_model_weight
@@ -76,7 +77,7 @@ class OptimizeWorker:
         self.compile_model()
         rc = self.config.resource
 
-        files = get_game_data_filenames(rc)
+        files = get_game_data_filenames(rc) + self.get_zipped_filenames(rc)
         logger.info(f'there are {len(files)} sar files')
         for f in files:
             self.filenames.put_nowait(f)
@@ -169,7 +170,10 @@ class OptimizeWorker:
                 except queue.Empty:
                     break
                 futures.append(executor.submit(load_data_from_file, filename, self.handled_files, self.config))
-
+            if not futures:
+                for deq in self.dataset:
+                    deq.clear()
+                return
             while futures:
                 future = next(as_completed(futures))
                 futures.remove(future)
@@ -228,9 +232,17 @@ class OptimizeWorker:
             raise RuntimeError('load model failed.')
         return model
 
+    def get_zipped_filenames(self, rc):
+        pattern = os.path.join(rc.play_data_dir, '*.tar.gz')
+        return glob(pattern)
+
 
 def load_data_from_file(filename, handled_q, cfg):
     logger.debug(f"loading data from {filename}")
+    suffix = '.tar.gz'
+    if filename.endswith(suffix):
+        untar(filename, cfg.resource.play_data_dir)
+        filename = filename[:-len(suffix)] + '.json'
     data = read_game_data_from_file(filename)
     handled_q.put_nowait(filename)
     if data is None:

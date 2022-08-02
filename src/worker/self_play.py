@@ -99,9 +99,10 @@ class SelfPlayWorker:
         Delete the play data from disk
         """
         files = get_game_data_filenames(self.config.resource)
-        if len(files) < self.config.playdata.max_file_num:
+        spare = len(files) - self.config.playdata.max_file_num
+        if spare < 0:
             return
-        for i in range(len(files) - self.config.playdata.max_file_num):
+        for i in range(spare):
             os.remove(files[i])
 
     def wait_best_model_notifier(self, cfg, model):
