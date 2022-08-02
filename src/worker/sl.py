@@ -47,9 +47,10 @@ class SupervisedLearningWorker:
         n_failed = 0
 
         pgn_iter = iter_pgn_files(self.config.resource.pgn_dir)
-        batch_pgn = self.config.playdata.sl_nb_game_in_file * self.config.playdata.max_file_num
+        batch_pgn = self.config.playdata.sl_nb_game_in_file
         with ProcessPoolExecutor(max_workers=self.config.play.max_processes) as executor:
             for games in self.get_games_from_files(pgn_iter, batch_pgn):
+                logger.info(f'pgn batch size: {batch_pgn}, n games: {len(games)}')
                 results = executor.map(get_buffer, repeat(self.config), games)
                 for env, data in results:
                     game_idx += 1
@@ -57,9 +58,9 @@ class SupervisedLearningWorker:
                         n_failed += 1
                         continue
                     self.buffer += data
-                    if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
-                        self.flush_buffer()
-        print(f'failed: {n_failed}, total: {game_idx}, helpful: {1 - n_failed / game_idx}')
+                if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
+                    self.flush_buffer()
+        logger.info(f'total: {game_idx}, failed: {n_failed}, helpful: {1 - n_failed / game_idx}')
         if len(self.buffer) > 0:
             self.flush_buffer()
 
@@ -135,7 +136,7 @@ def get_buffer(config, game: dict) -> Tuple[Env, list]:
             logger.error(e)
             return env, []
         if done:
-            print(f'player {player.id.name}, reward: {reward}')
+            # print(f'player {player.id.name}, reward: {reward}')
             break
 
     player = players[env.cur_player]
