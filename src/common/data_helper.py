@@ -2,12 +2,14 @@
 Various helper functions for working with the data used in this app
 """
 import filecmp
+import io
 import json
 import os
 import pathlib
 import tarfile
 from glob import glob
 from logging import getLogger
+from time import time
 from uuid import uuid4
 
 logger = getLogger(__name__)
@@ -36,14 +38,14 @@ def get_next_gen_model_dirs(rc):
 
 
 def write_game_data_to_file(path, data, cfg, **kwargs):
-    try:
-        with open(path, "wt") as f:
-            json.dump(data, f)
-    except Exception as e:
-        logger.error(e)
-
     if cfg.playdata.archive:
-        path = archive_remove_play_data(path)  # change name
+        path = archive_play_data(data, path)  # change name
+    else:
+        try:
+            with open(path, "wt") as f:
+                json.dump(data, f)
+        except Exception as e:
+            logger.error(e)
 
     rc = cfg.resource
     if rc and rc.dist_play_data:
@@ -177,6 +179,26 @@ def archive_remove_play_data(path):
     tar_path = os.path.join(dir_, tar_name)
     archive(path, tar_path)
     os.remove(path)
+    return tar_path
+
+
+def archive_play_data(data, path):
+    dir_ = os.path.dirname(path)
+    bn = os.path.basename(path)
+    tar_name = f'{os.path.splitext(bn)[0]}.tar.gz'
+    tar_path = os.path.join(dir_, tar_name)
+    content = json.dumps(data).encode('utf-8')
+
+    tar_fileobj = io.BytesIO()
+    with tarfile.open(fileobj=tar_fileobj, mode='w:gz') as tar:
+        tinfo = tarfile.TarInfo(bn)
+        tinfo.size = len(content)
+        tinfo.mtime = int(time())
+        tinfo.mode = 0o664
+        tar.addfile(tinfo, io.BytesIO(content))
+    tar_fileobj.seek(0)
+    with open(tar_path, 'wb') as fp:
+        fp.write(tar_fileobj.getvalue())
     return tar_path
 
 
