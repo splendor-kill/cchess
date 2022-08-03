@@ -109,7 +109,7 @@ def get_games_from_file(filename):
                     # keep State.POST
                     pass
 
-    print(f'end with state: {state.name}')
+    # print(f'end with state: {state.name}')
 
 
 if __name__ == '__main__':

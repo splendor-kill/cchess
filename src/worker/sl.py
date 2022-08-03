@@ -4,14 +4,14 @@ Contains the worker for training the model using recorded game data rather than 
 import os
 from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime
-from itertools import repeat, islice
+from itertools import repeat
 from logging import getLogger
 from threading import Thread
 from typing import Tuple
 
 from xiangqi import Env, Camp
 
-from common.data_helper import write_game_data_to_file, find_pgn_files, iter_pgn_files
+from common.data_helper import write_game_data_to_file, iter_pgn_files
 from common.pgn_parser_simple import get_games_from_file
 
 logger = getLogger(__name__)
@@ -60,28 +60,21 @@ class SupervisedLearningWorker:
                     self.buffer += data
                 if (game_idx % self.config.playdata.sl_nb_game_in_file) == 0:
                     self.flush_buffer()
-        logger.info(f'total: {game_idx}, failed: {n_failed}, helpful: {1 - n_failed / game_idx}')
+        logger.info(f'total: {game_idx}, failed: {n_failed}')
         if len(self.buffer) > 0:
             self.flush_buffer()
-
-    def get_games_from_all_files(self):
-        """
-        Loads game data from pgn files
-        :return list(chess.pgn.Game): the games
-        """
-        files = find_pgn_files(self.config.resource.pgn_dir)
-        print(f'there are {len(files)} pgn files been found int total')
-        games = []
-        for filename in files:
-            games.extend(get_games_from_file(filename))
-        print("done reading")
-        return games
 
     def get_games_from_files(self, iterable, size):
         while True:
             games = []
-            for filename in islice(iterable, size):
-                games.extend(get_games_from_file(filename))
+            for filename in iterable:
+                games_in_file = get_games_from_file(filename)
+                for i, g in enumerate(games_in_file):
+                    games.append(g)
+                    if len(games) == size:
+                        yield games
+                        games = []
+                logger.debug(f'there are {i + 1} games in {filename}.')
             if not games:
                 break
             yield games

@@ -43,9 +43,7 @@ def write_game_data_to_file(path, data, cfg, **kwargs):
         logger.error(e)
 
     if cfg.playdata.archive:
-        path_new = archive_remove_play_data(path)  # change name
-        os.remove(path)
-        path = path_new
+        path = archive_remove_play_data(path)  # change name
 
     rc = cfg.resource
     if rc and rc.dist_play_data:
