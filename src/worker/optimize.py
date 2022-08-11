@@ -95,11 +95,6 @@ class OptimizeWorker:
                 continue
             total_steps += steps
             self.save_current_model()
-            s, a, r = self.dataset
-            while len(s) > self.config.trainer.dataset_size / 4:
-                s.popleft()
-                a.popleft()
-                r.popleft()
 
             if rc.dist_play_data and not is_disk_enough(rc.disk_upper_limit):
                 to_del = []
@@ -186,6 +181,7 @@ class OptimizeWorker:
                 sar = future.result()
                 for x, y in zip(self.dataset, sar):
                     x.extend(y)
+                del sar
                 if len(self.dataset[0]) >= self.config.trainer.dataset_size:
                     break
 
@@ -195,7 +191,7 @@ class OptimizeWorker:
         (state, policy, and value).
         """
         state_ary, policy_ary, value_ary = self.dataset
-
+        self.dataset = deque(), deque(), deque()
         state_ary1 = np.asarray(state_ary, dtype=np.float32)
         policy_ary1 = np.asarray(policy_ary, dtype=np.float32)
         value_ary1 = np.asarray(value_ary, dtype=np.float32)
@@ -240,10 +236,13 @@ class OptimizeWorker:
 def load_data_from_file(filename, handled_q, cfg):
     logger.debug(f"loading data from {filename}")
     suffix = '.tar.gz'
-    if filename.endswith(suffix):
+    is_tar = filename.endswith(suffix)
+    if is_tar:
         untar(filename, cfg.resource.play_data_dir)
-        filename = filename[:-len(suffix)] + '.json'
-    data = read_game_data_from_file(filename)
+        filename_new = filename[:-len(suffix)] + '.json'
+    data = read_game_data_from_file(filename_new)
+    if is_tar:
+        del_some_files([filename_new])
     handled_q.put_nowait(filename)
     if data is None:
         return np.array([], np.float32), np.array([], np.float32), np.array([], np.float32)
