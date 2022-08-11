@@ -17,7 +17,7 @@ from xiangqi import Env, Camp
 
 from agent.player_mcts import MCTSPlayer
 from common.data_helper import check_ng_model_notifier, update_best_model_notifier, \
-    check_best_model_notifier
+    check_best_model_notifier, get_next_gen_model_dirs
 from common.store_helper import get_store_util
 from model.helper import load_best_model_weight, save_as_best_model
 from model.nn import NNModel
@@ -70,11 +70,11 @@ class EvaluateWorker:
                 model_walk = iter(self.load_next_generation_model())
                 continue
 
-            logger.debug(f"start evaluate model {model_dir}")
+            logger.info(f"start evaluate model {model_dir}")
             try:
                 ng_is_great = self.evaluate_model(ng_model)
                 if ng_is_great:
-                    logger.debug(f"New Model become best model: {model_dir}")
+                    logger.info(f"New Model become best model: {model_dir}")
                     save_as_best_model(ng_model)
                     self.current_model = ng_model
 
@@ -145,7 +145,8 @@ class EvaluateWorker:
         """
 
         model = NNModel(self.config)
-        self.wait_best_model_notifier(self.config.resource, model)
+        if self.config.model.distributed:
+            self.wait_best_model_notifier(self.config.resource, model)
         load_best_model_weight(model)
         model.session = K.get_session()
         model.graph = model.session.graph
@@ -157,7 +158,9 @@ class EvaluateWorker:
         :return (ChessModel, file): the model and the directory that it was in
         """
         rc = self.config.resource
-        for model_dir in self.wait_next_gen_model_comming(rc):
+        next_gen_model_iterable = self.wait_next_gen_model_comming(
+            rc) if rc.dist_next_gen_model else get_next_gen_model_dirs(rc)
+        for model_dir in next_gen_model_iterable:
             config_path = os.path.join(model_dir, rc.next_gen_model_config_filename)
             weight_path = os.path.join(model_dir, rc.next_gen_model_weight_filename)
             model = NNModel(self.config)
