@@ -48,8 +48,7 @@ class EvaluateWorker:
         """
         self.dist_id = uuid4().hex
         self.config = config
-        rc = self.config.resource
-        self.store_util = get_store_util(resource_config=rc)
+        self.store_util = get_store_util(resource_config=self.config.resource)
         self.play_config = config.eval.play_config
         self.current_model = self.load_current_model()
         self.m = Manager()
@@ -78,12 +77,9 @@ class EvaluateWorker:
                     save_as_best_model(ng_model)
                     self.current_model = ng_model
 
-                    rc = self.config.resource
-                    update_best_model_notifier(self.store_util, rc, phase='updating', did=self.dist_id)
-                    model_config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
-                    model_weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
-                    ng_model.upload(model_config_path, model_weight_path)
-                    update_best_model_notifier(self.store_util, rc, phase='updated', did=self.dist_id)
+                    if self.config.model.distributed:
+                        rc = self.config.resource
+                        self.upload_best_model(rc, ng_model)
                 self.move_model(model_dir)
             except Exception as e:
                 logger.error(e)
@@ -235,6 +231,14 @@ class EvaluateWorker:
                 model_path = os.path.join(cfg.next_gen_model_dir, model_name)
                 yield model_path
             break
+
+    def upload_best_model(self, rc, which_model):
+        assert self.config.model.distributed
+        update_best_model_notifier(self.store_util, rc, phase='updating', did=self.dist_id)
+        model_config_path = os.path.join(rc.model_dir, rc.model_best_config_path)
+        model_weight_path = os.path.join(rc.model_dir, rc.model_best_weight_path)
+        which_model.upload(model_config_path, model_weight_path)
+        update_best_model_notifier(self.store_util, rc, phase='updated', did=self.dist_id)
 
 
 def play_game(config, cur, ng, cur_red: bool) -> Tuple[float, Env, bool]:
