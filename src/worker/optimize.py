@@ -62,6 +62,7 @@ class OptimizeWorker:
         self.m = Manager()
         self.filenames = self.m.Queue()
         self.handled_files = self.m.Queue()
+        self.file_cnt = 0
 
     def start(self):
         """
@@ -87,13 +88,16 @@ class OptimizeWorker:
 
         total_steps = self.config.trainer.start_total_steps
 
+        epoch_cnt = 0
         while True:
             self.fill_queue()
             steps = self.train_epoch(self.config.trainer.epoch_to_checkpoint)
+            epoch_cnt += 1
             if steps == 0:
                 sleep(1)
                 continue
             total_steps += steps
+            logger.info(f'epochs: {epoch_cnt}, steps: {total_steps}, files: {self.file_cnt}')
             self.save_current_model()
 
             if rc.dist_play_data and not is_disk_enough(rc.disk_upper_limit):
@@ -115,13 +119,14 @@ class OptimizeWorker:
         state_ary, policy_ary, value_ary = self.collect_all_loaded_data()
         if state_ary.shape[0] == 0:
             return 0
-        tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
+        # tensorboard_cb = TensorBoard(log_dir=self.config.resource.log_dir, batch_size=tc.batch_size, histogram_freq=1)
         self.model.model.fit(state_ary, [policy_ary, value_ary],
                              batch_size=tc.batch_size,
                              epochs=epochs,
                              shuffle=True,
                              validation_split=0.02,
-                             callbacks=[tensorboard_cb])
+                             # callbacks=[tensorboard_cb]
+                             )
         steps = (state_ary.shape[0] // tc.batch_size) * epochs
         return steps
 
@@ -172,6 +177,7 @@ class OptimizeWorker:
             while futures:
                 future = next(as_completed(futures))
                 futures.remove(future)
+                self.file_cnt += 1
                 if not self.filenames.empty():
                     try:
                         filename = self.filenames.get_nowait()
@@ -237,6 +243,7 @@ def load_data_from_file(filename, handled_q, cfg):
     logger.debug(f"loading data from {filename}")
     suffix = '.tar.gz'
     is_tar = filename.endswith(suffix)
+    filename_new = filename
     if is_tar:
         untar(filename, cfg.resource.play_data_dir)
         filename_new = filename[:-len(suffix)] + '.json'
